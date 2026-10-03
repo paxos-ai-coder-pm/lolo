@@ -210,6 +210,34 @@ dialog textarea { min-height: 140px; resize: vertical; font: 20px/1.2 var(--term
 .hud, .tip .m, #testsNow { font-family: var(--mono) !important; font-size: 12px; }
 dialog input, dialog select, .num-in { font-family: var(--mono) !important; font-size: 13px; }
 
+/* ---------- landing ---------- */
+html.locked { overflow: hidden; }
+.landing { position: fixed; inset: 0; z-index: 50; background: var(--bg); display: grid; place-items: center; transition: opacity .7s ease; }
+.landing.gone { opacity: 0; pointer-events: none; }
+#lcv { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; }
+.lcontent { position: relative; width: min(680px, 90vw); display: flex; flex-direction: column; align-items: center; gap: 18px; text-align: center; transition: opacity .4s, transform .4s; }
+.landing.launching .lcontent { opacity: 0; transform: translateY(-12px); pointer-events: none; }
+#lnova { width: 128px; height: 160px; image-rendering: pixelated; }
+.landing h1 { margin: 0; font: 400 64px/0.95 var(--num); letter-spacing: .01em; color: var(--ink); }
+.landing h1 span { color: var(--pink); }
+.landing .pitch { margin: 0; color: var(--ink-2); font-size: 14px; max-width: 520px; }
+.lform { width: 100%; display: flex; flex-direction: column; gap: 10px; }
+.lform textarea { width: 100%; min-height: 96px; resize: none; font: 22px/1.25 var(--term); padding: 14px 16px; background: var(--panel); border: 2px solid var(--rule-2); outline: none; clip-path: var(--notch); }
+.lform textarea:focus { border-color: var(--cyan); }
+.lform .row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.lform .hint { font: 12px var(--pix); color: var(--muted); text-transform: none; }
+.skip { background: none; border: 0; color: var(--ink-2); font: 500 13px var(--pix); cursor: pointer; padding: 6px 8px; }
+.skip:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 4px; }
+.lerr { color: var(--red); font: 13px var(--pix); min-height: 1em; }
+.lstatus { position: absolute; left: 50%; bottom: 14vh; transform: translateX(-50%); width: min(560px, 90vw); display: none; flex-direction: column; gap: 10px; padding: 14px 16px; background: rgba(23, 21, 47, .88); }
+.landing.launching .lstatus { display: flex; }
+.lstatus .lines { font: 24px/1.3 var(--term); color: var(--ink); min-height: 4em; }
+.lstatus .lines div::before { content: "> "; color: var(--cyan); }
+.lstatus .lines div.done { color: var(--ink-2); }
+.lstatus .segs { display: flex; gap: 3px; height: 12px; }
+.lstatus .segs i { flex: 1; background: var(--rule-2); }
+.lstatus .segs i.on { background: var(--cyan); }
+
 @media (max-width: 1100px), (max-height: 600px) {
   html { scroll-snap-type: none; }
   .screen { height: auto; min-height: 0; }
@@ -224,6 +252,23 @@ dialog input, dialog select, .num-in { font-family: var(--mono) !important; font
 </style>
 </head>
 <body>
+
+<!-- ======================= LANDING ======================= -->
+<section class="landing" id="landing" aria-label="Welcome">
+  <canvas id="lcv" aria-hidden="true"></canvas>
+  <div class="lcontent">
+    <canvas id="lnova" width="32" height="40" role="img" aria-label="Nova waving"></canvas>
+    <h1>Just tell me what to build.<br><span>I'll keep making it better.</span></h1>
+    <p class="pitch">Describe it in a sentence. Nova builds a working first version, then runs experiments to improve it, keeping only what makes it better.</p>
+    <form class="lform" id="lform">
+      <textarea id="lgoal" placeholder="e.g. A Sudoku solver that's as fast as possible" aria-label="What should Nova build?"></textarea>
+      <div class="row"><span class="hint">Enter to launch · Shift+Enter for a new line</span><button class="btn go" type="submit" id="lgo">Launch</button></div>
+      <div class="lerr" id="lerr"></div>
+    </form>
+    <button class="skip" id="lskip" type="button">Skip to mission control →</button>
+  </div>
+  <div class="lstatus" aria-live="polite"><div class="lines" id="llines"></div><div class="segs" id="lsegs"></div></div>
+</section>
 
 <!-- ======================= SCREEN 1: MISSION ======================= -->
 <section class="screen mission" id="s1">
@@ -591,13 +636,16 @@ const POSES = {
   decide:    { L: [[-3, 20], [-5, 17]], R: [[18, 20], [20, 17]], mouth: "flat" },
   log:       { L: [[2, 23], [5, 21]], R: [[13, 22], [10, 19]], mouth: "smile" },
   celebrate: { L: [[-1, 12], [-2, 7]], R: [[16, 12], [17, 7]], mouth: "big" },
+  wave:      { L: [[0, 21], [0, 24]], R: [[19, 13], [19, 6]], mouth: "big" },
   error:     { L: [[0, 21], [0, 24]], R: [[18, 10], [12, 0]], mouth: "worry" },
 };
 const MOUTH = { smile: [[6, 11], [9, 11], [7, 12], [8, 12]], flat: [[7, 12], [8, 12]], big: [[5, 11], [10, 11], [6, 12], [7, 12], [8, 12], [9, 12]], worry: [[7, 11], [8, 11], [6, 12], [9, 12]] };
 const LAMP = { boot: "B", study: "C", think: "B", build: "C", test: "C", decide: "P", log: "C", rest: "c", celebrate: "P", error: "R" };
 
 const scene = { stage: "rest", running: false, px: 3, w: 0, h: 0, stars: [], frame: 0 };
-const cv = $("scene"), cx = cv.getContext("2d");
+const cv = $("scene");
+let cx = cv.getContext("2d");   // swapped by withCtx() to draw on other canvases
+function withCtx(ctx, fn) { const prev = cx; cx = ctx; try { fn(); } finally { cx = prev; } }
 
 function fitScene() {
   const vp = $("viewport"), cw = vp.clientWidth, ch = vp.clientHeight;
@@ -662,13 +710,17 @@ function draw() {
   cx.globalAlpha = 1;
 
   // Nova
-  const pose = POSES[st] || POSES.idle;
   let bob = (Math.floor(f / 6) % 2) ? 0 : 1;
   if (st === "rest") bob = (Math.floor(f / 12) % 2) ? 0 : 1;
   if (st === "celebrate") bob = [0, -2, -4, -5, -4, -2][f % 6];
   const x0 = vx - 8, y0 = horizon - SPRITE_H + 1 + bob;
   rect(x0 + 1, horizon + 1, 14, 1, "#15123a");   // shadow
+  drawNova(x0, y0, st, f);
+}
 
+/** Nova plus the current stage's props, with the sprite's top-left at (x0, y0). */
+function drawNova(x0, y0, st, f) {
+  const pose = POSES[st] || POSES.idle;
   // props behind
   if (st === "boot") ring(x0 + 8, y0 + 15, 21).forEach(([a, b], i) => { if ((i + f) % 4 === 0) px(a, b, "c"); });
   if (st === "study") {
@@ -726,7 +778,7 @@ function draw() {
   // arms last
   const tap = st === "build" ? f % 2 : 0;   // hands alternate on the keyboard
   arm(x0, y0, SH.L, pose.L[0], pose.L[1], tap);
-  arm(x0, y0, SH.R, pose.R[0], pose.R[1], st === "build" ? 1 - tap : 0);
+  arm(x0, y0, SH.R, pose.R[0], pose.R[1], st === "build" ? 1 - tap : st === "wave" ? (f % 4 < 2 ? 0 : 3) : 0);
 }
 if (!REDUCED) setInterval(() => { scene.frame++; draw(); }, 125);   // 8 fps, like a handheld
 
@@ -1057,7 +1109,6 @@ async function refresh() {
     if ((!selected || !projects.some(p => p.id === selected)) && projects.length) selected = projects[0].id;
     renderPicker();
     if (!projects.length) { $("dStart").disabled = true; $("dStop").disabled = true; }
-    if (!projects.length && firstLoad) openNew();
     firstLoad = false;
     if (selected && projects.some(p => p.id === selected)) {
       const p = await api(`/api/projects/${encodeURIComponent(selected)}`);
@@ -1066,6 +1117,101 @@ async function refresh() {
   } catch (e) { console.error(e); }
   busy = false;
 }
+// ---------------- landing ----------------
+const landing = {
+  on: !location.hash,          // a link to a mission goes straight to mission control
+  launching: false, t: 0, speed: REDUCED ? 0 : 0.4, stars: [], w: 0, h: 0, scale: 3,
+};
+const lcv = $("lcv"), lctx = lcv.getContext("2d"), lnova = $("lnova").getContext("2d");
+function fitLanding() {
+  landing.w = Math.ceil(innerWidth / landing.scale); landing.h = Math.ceil(innerHeight / landing.scale);
+  lcv.width = landing.w; lcv.height = landing.h;
+  landing.stars = Array.from({ length: 220 }, () => ({ x: (Math.random() - .5) * 2, y: (Math.random() - .5) * 2, z: Math.random() * 1 + .05 }));
+}
+function drawLanding() {
+  const { w, h } = landing, c = lctx;
+  c.fillStyle = "#17152f"; c.fillRect(0, 0, w, h);
+  // hyperspace: stars fly outward from the centre; streaks grow with speed
+  for (const s of landing.stars) {
+    const pz = s.z;
+    s.z -= 0.004 * landing.speed;
+    if (s.z <= 0.03) { s.x = (Math.random() - .5) * 2; s.y = (Math.random() - .5) * 2; s.z = 1; continue; }
+    const k = Math.min(w, h) * 0.5;
+    const x1 = Math.round(w / 2 + s.x / s.z * k), y1 = Math.round(h / 2 + s.y / s.z * k);
+    const x0 = Math.round(w / 2 + s.x / pz * k), y0 = Math.round(h / 2 + s.y / pz * k);
+    if (x1 < 0 || y1 < 0 || x1 >= w || y1 >= h) continue;
+    const col = landing.speed > 3 ? (s.x > 0 ? "#74d9e4" : "#ef80b2") : "#dddbf2";
+    c.globalAlpha = Math.min(1, (1 - s.z) * 1.3);
+    withCtx(c, () => landing.speed > 1.2 ? line(x0, y0, x1, y1, col) : px(x1, y1, col));
+  }
+  c.globalAlpha = 1;
+  // Nova waves on the welcome screen, then rides along during the jump
+  lnova.clearRect(0, 0, 32, 40);
+  withCtx(lnova, () => drawNova(8, 4 + (Math.floor(landing.t / 6) % 2), landing.launching ? "boot" : "wave", landing.t));
+  if (landing.launching) {
+    const n = 18; // Nova, scaled up, in the middle of the jump
+    c.imageSmoothingEnabled = false;
+    c.drawImage($("lnova"), Math.round(w / 2 - n), Math.round(h / 2 - n * 1.25), n * 2, n * 2.5);
+  }
+}
+function landingLoop() {
+  if (!landing.on) return;
+  landing.t++;
+  if (landing.launching && !REDUCED) landing.speed = Math.min(14, landing.speed * 1.045 + 0.02);
+  drawLanding();
+  setTimeout(() => requestAnimationFrame(landingLoop), 1000 / 30);
+}
+function closeLanding() {
+  $("landing").classList.add("gone");
+  document.documentElement.classList.remove("locked");
+  setTimeout(() => { landing.on = false; $("landing").hidden = true; }, 750);
+}
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+async function launchFromLanding(goal) {
+  landing.launching = true;
+  $("landing").classList.add("launching");
+  const lines = $("llines"), segs = $("lsegs");
+  segs.replaceChildren(...Array.from({ length: 16 }, () => el("i")));
+  const steps = ["Got it.", "Reading your brief...", "Choosing how to measure success...", "Waking up Nova...", "Launching mission."];
+  const create = api("/api/projects", { goal, iterations: 10, budget: 120 });   // starts the run right away
+  let id = null, err = null;
+  create.then(r => { id = r.id; }, e => { err = e; });
+  for (let i = 0; i < steps.length; i++) {
+    [...lines.children].forEach(n => n.classList.add("done"));
+    lines.append(el("div", { text: steps[i] }));
+    if (lines.children.length > 3) lines.firstChild.remove();
+    [...segs.children].forEach((n, k) => n.classList.toggle("on", k < Math.round((i + 1) / steps.length * 16)));
+    await sleep(REDUCED ? 150 : 750);
+    if (err) break;
+  }
+  try { id = (await create).id; } catch (e) { err = e; }
+  if (err) {   // back to the form, keep what they typed
+    landing.launching = false; landing.speed = REDUCED ? 0 : 0.4;
+    $("landing").classList.remove("launching"); lines.replaceChildren();
+    $("lerr").textContent = err.message;
+    return;
+  }
+  closeLanding();
+  select(id);
+}
+$("lform").addEventListener("submit", e => {
+  e.preventDefault();
+  const goal = $("lgoal").value.trim();
+  $("lerr").textContent = "";
+  if (goal.length < 10) { $("lerr").textContent = "Tell me a little more: a sentence about what to build."; return; }
+  launchFromLanding(goal);
+});
+$("lgoal").addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); $("lform").requestSubmit(); } });
+$("lskip").addEventListener("click", closeLanding);
+if (landing.on) {
+  document.documentElement.classList.add("locked");
+  fitLanding(); addEventListener("resize", fitLanding);
+  requestAnimationFrame(landingLoop);
+  setTimeout(() => $("lgoal").focus(), 50);
+} else {
+  $("landing").hidden = true;
+}
+
 refresh();
 setInterval(refresh, 2500);
 setInterval(() => current && renderAgent(current), 1000);
