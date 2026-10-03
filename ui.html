@@ -10,10 +10,10 @@
 <style>
 :root {
   color-scheme: dark;
-  --bg: #0d0c0b; --panel: #151311; --panel-2: #1b1916; --rule: #2a2622; --rule-2: #3b352f;
-  --ink: #f1e9dc; --ink-2: #b8ae9f; --muted: #7f766a;
-  --amber: #ffa043; --amber-ink: #1a1007; --amber-dim: rgba(255, 160, 67, 0.12);
-  --good: #9fd08c; --bad: #ff6a55;
+  --bg: #06080b; --panel: #0a0d11; --panel-2: #0f1318; --rule: #161c23; --rule-2: #232b35;
+  --ink: #e4ebf2; --ink-2: #93a1b0; --muted: #566473;
+  --amber: #6ee7f9; --amber-ink: #021014; --amber-dim: rgba(110, 231, 249, 0.08);
+  --good: #6ee7f9; --bad: #ff6b81;
   --sans: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
   --cond: "IBM Plex Sans Condensed", "Segoe UI", system-ui, sans-serif;
   --mono: "IBM Plex Mono", "Cascadia Mono", Consolas, monospace;
@@ -57,7 +57,9 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .btn { display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 14px; border: 1px solid var(--rule-2); background: var(--panel); cursor: pointer; font: 500 13px var(--sans); white-space: nowrap; text-decoration: none; color: var(--ink); }
 .btn:hover:not(:disabled) { border-color: var(--ink-2); }
 .btn.go { background: var(--amber); border-color: var(--amber); color: var(--amber-ink); font-weight: 600; }
-.btn.go:hover:not(:disabled) { background: #ffb366; border-color: #ffb366; }
+.btn.go:hover:not(:disabled) { background: #a5f1fc; border-color: #a5f1fc; }
+.btn.ghost { border-color: transparent; background: none; color: var(--ink-2); }
+.btn.ghost:hover:not(:disabled) { color: var(--ink); border-color: var(--rule-2); }
 .btn:disabled { opacity: .35; cursor: default; }
 .btn kbd { font: 500 10.5px var(--mono); opacity: .7; }
 .num-in { width: 56px; height: 32px; background: var(--panel); border: 1px solid var(--rule-2); padding: 0 8px; font: 500 13px var(--mono); }
@@ -76,9 +78,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .rightcol { display: grid; grid-template-rows: auto 1fr minmax(150px, 30%); gap: var(--gap); background: var(--rule); min-height: 0; }
 
 /* viewport */
-.viewport { padding: 0; overflow: hidden; background: #12100e; }
-.viewport::after { content: ""; position: absolute; inset: 0; pointer-events: none;
-  background: repeating-linear-gradient(0deg, rgba(255,255,255,.018) 0 1px, transparent 1px 3px); }
+.viewport { padding: 0; overflow: hidden; background: #080b0e; }
 .viewport .corner { position: absolute; width: 14px; height: 14px; border: 0 solid var(--muted); z-index: 2; }
 .corner.tl { top: 10px; left: 10px; border-top-width: 1px; border-left-width: 1px; }
 .corner.tr { top: 10px; right: 10px; border-top-width: 1px; border-right-width: 1px; }
@@ -103,18 +103,18 @@ button, input, select, textarea { font: inherit; color: inherit; }
 
 /* stage tape */
 .tape { display: grid; grid-template-columns: repeat(6, 1fr); padding: 0; }
-.tape div { padding: 10px 10px 11px; border-right: 1px solid var(--rule); font: 500 11px var(--mono); color: var(--muted); display: flex; flex-direction: column; gap: 3px; transition: background .3s, color .3s; }
+.tape div { padding: 12px 10px; border-right: 1px solid var(--rule); font: 500 11px var(--mono); color: var(--muted); display: flex; flex-direction: column; gap: 3px; transition: background .3s, color .3s; }
 .tape div:last-child { border-right: 0; }
 .tape div span { font: 600 13px var(--sans); color: var(--ink-2); }
 .tape div.done { color: var(--amber); } .tape div.done span { color: var(--ink); }
 .tape div.cur { background: var(--amber); color: var(--amber-ink); } .tape div.cur span { color: var(--amber-ink); }
 
 /* readouts */
-.readouts { display: grid; grid-template-columns: 1.8fr repeat(4, 1fr); gap: var(--gap); background: var(--rule); }
+.readouts { display: grid; grid-template-columns: 1.6fr repeat(3, 1fr); gap: var(--gap); background: var(--rule); }
 .ro { display: flex; flex-direction: column; gap: 6px; justify-content: space-between; }
-.ro .v { font: 600 30px/1 var(--cond); font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+.ro .v { font: 500 28px/1 var(--cond); font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
 .ro .s { font: 11px var(--mono); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ro.hero .v { font-size: 52px; color: var(--amber); }
+.ro.hero .v { font-size: 48px; color: var(--amber); font-weight: 500; }
 .up { color: var(--good) !important; } .down { color: var(--bad) !important; }
 
 /* chart panels */
@@ -128,13 +128,11 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .tip { position: absolute; z-index: 5; pointer-events: none; display: none; background: var(--panel-2); border: 1px solid var(--rule-2); padding: 10px 12px; max-width: 340px; font-size: 12.5px; }
 .tip b { font: 600 18px var(--cond); }
 .tip .m { font: 11px var(--mono); color: var(--muted); }
-.bottom { display: grid; grid-template-columns: 1.3fr 1fr 1.2fr; gap: var(--gap); background: var(--rule); min-height: 0; }
+.bottom { display: grid; grid-template-columns: 1.6fr 1fr; gap: var(--gap); background: var(--rule); min-height: 0; }
 .kv { display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; font: 12.5px var(--mono); align-content: start; }
 .kv dt { color: var(--muted); } .kv dd { margin: 0; text-align: right; color: var(--ink); }
 .bar { height: 6px; background: var(--rule); margin: 4px 0 2px; grid-column: 1 / -1; }
 .bar div { height: 100%; background: var(--amber); transition: width .6s; }
-.brief { overflow: auto; }
-.brief p { margin: 8px 0 0; color: var(--ink-2); white-space: pre-wrap; font-size: 13px; }
 
 /* ---------- records screen ---------- */
 .recgrid { grid-template-columns: 1fr 1fr; }
@@ -174,7 +172,7 @@ td .note { color: var(--muted); font-size: 12px; margin-top: 3px; }
 
 /* ---------- dialog ---------- */
 dialog { background: var(--panel); color: var(--ink); border: 1px solid var(--rule-2); padding: 0; width: min(640px, 92vw); }
-dialog::backdrop { background: rgba(5, 4, 3, 0.72); backdrop-filter: blur(2px); }
+dialog::backdrop { background: rgba(2, 4, 6, 0.75); backdrop-filter: blur(2px); }
 dialog form { display: grid; gap: 14px; padding: 22px 24px 24px; }
 dialog h2 { margin: 0; font: 600 22px var(--cond); }
 dialog label { font: 500 11px var(--mono); color: var(--muted); display: grid; gap: 6px; }
@@ -246,7 +244,7 @@ dialog textarea { min-height: 150px; resize: vertical; font-size: 15px; }
 <section class="screen mission" id="s1">
   <header class="topbar">
     <div class="mark">
-      <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><circle cx="11" cy="11" r="9.5" fill="none" stroke="#ffa043" stroke-width="1.5"/><path d="M11 1.5 A9.5 9.5 0 0 1 20.5 11" fill="none" stroke="#f1e9dc" stroke-width="1.5"/><circle cx="11" cy="11" r="2.5" fill="#ffa043"/></svg>
+      <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><circle cx="11" cy="11" r="9.5" fill="none" stroke="#6ee7f9" stroke-width="1.5"/><path d="M11 1.5 A9.5 9.5 0 0 1 20.5 11" fill="none" stroke="#e4ebf2" stroke-width="1.5"/><circle cx="11" cy="11" r="2.5" fill="#6ee7f9"/></svg>
       Loop Agent
     </div>
     <button class="picker" id="pickerBtn" popovertarget="mlist" aria-label="Choose mission">
@@ -256,106 +254,96 @@ dialog textarea { min-height: 150px; resize: vertical; font-size: 15px; }
     <div id="mlist" popover></div>
     <span class="clock" id="clock"></span>
     <div class="spacer"></div>
-    <a class="btn" id="dDash" target="_blank" rel="noopener">Agent's dashboard ↗</a>
-    <div class="vr"></div>
     <span class="lbl">runs</span><input class="num-in" type="number" id="dIters" value="10" min="1" aria-label="Experiments to run">
     <button class="btn go" id="dStart">Resume</button>
     <button class="btn" id="dStop">Stop</button>
-    <div class="vr"></div>
-    <button class="btn" id="newBtn">New mission <kbd>N</kbd></button>
+    <button class="btn ghost" id="newBtn" title="New mission (N)">+ New mission</button>
   </header>
 
   <div class="ruled board" id="board">
     <div class="leftcol">
       <div class="cell viewport" id="viewport">
-        <span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
-        <div class="hud l">CAM 01 · NOVA</div>
         <div class="hud r" id="live"><i></i><span>STANDBY</span></div>
-        <div class="hud b"><span id="hudStage">—</span><span id="hudTime"></span></div>
+        <div class="hud b"><span></span><span id="hudTime"></span></div>
         <div class="stamp" id="stamp">NEW BEST<small id="stampSub"></small></div>
         <svg id="avatar" viewBox="-80 0 360 250" preserveAspectRatio="xMidYMid meet" data-stage="rest" role="img" aria-label="The agent, Nova">
           <g id="sky"></g>
-          <g id="moon"><circle cx="0" cy="0" r="16" fill="none" stroke="#3b352f" stroke-width="1"/><path d="M-16 0 a16 16 0 0 0 32 0" fill="#1b1916"/></g>
-          <g id="floor" stroke="#ffa043" stroke-width=".6" fill="none"></g>
+          <g id="floor" stroke="#6ee7f9" stroke-width=".6" fill="none"></g>
           <ellipse cx="100" cy="226" rx="34" ry="4" fill="#000" opacity=".45"/>
 
           <!-- props behind the figure (amber vector-display style) -->
-          <g class="prop p-boot"><circle class="bootring" cx="100" cy="130" r="96" fill="none" stroke="#ffa043" stroke-opacity=".55" stroke-width="1" stroke-dasharray="2 7"/></g>
-          <g class="prop p-study" stroke="#ffa043" fill="none" stroke-width="1">
-            <rect x="4" y="92" width="54" height="64" fill="rgba(255,160,67,.06)"/>
+          <g class="prop p-boot"><circle class="bootring" cx="100" cy="130" r="96" fill="none" stroke="#6ee7f9" stroke-opacity=".55" stroke-width="1" stroke-dasharray="2 7"/></g>
+          <g class="prop p-study" stroke="#6ee7f9" fill="none" stroke-width="1">
+            <rect x="4" y="92" width="54" height="64" fill="rgba(110,231,249,.06)"/>
             <g stroke-width="1.6" stroke-linecap="square" opacity=".85"><line x1="11" y1="103" x2="42" y2="103"/><line x1="11" y1="112" x2="50" y2="112"/><line x1="11" y1="121" x2="36" y2="121"/><line x1="11" y1="130" x2="47" y2="130"/><line x1="11" y1="139" x2="31" y2="139"/></g>
-            <line class="scanline" x1="5" y1="97" x2="57" y2="97" stroke="#f1e9dc" stroke-width=".8"/>
+            <line class="scanline" x1="5" y1="97" x2="57" y2="97" stroke="#e4ebf2" stroke-width=".8"/>
           </g>
           <g class="prop p-build" stroke-width="1.8" stroke-linecap="square">
-            <rect x="142" y="22" width="54" height="48" fill="rgba(255,160,67,.06)" stroke="#ffa043" stroke-width="1"/>
-            <g><line class="codeline" x1="149" y1="33" x2="176" y2="33" stroke="#ffa043"/><line class="codeline" x1="155" y1="42" x2="188" y2="42" stroke="#f1e9dc"/><line class="codeline" x1="155" y1="51" x2="174" y2="51" stroke="#9fd08c"/><line class="codeline" x1="149" y1="60" x2="166" y2="60" stroke="#f1e9dc"/></g>
+            <rect x="142" y="22" width="54" height="48" fill="rgba(110,231,249,.06)" stroke="#6ee7f9" stroke-width="1"/>
+            <g><line class="codeline" x1="149" y1="33" x2="176" y2="33" stroke="#6ee7f9"/><line class="codeline" x1="155" y1="42" x2="188" y2="42" stroke="#e4ebf2"/><line class="codeline" x1="155" y1="51" x2="174" y2="51" stroke="#6ee7f9"/><line class="codeline" x1="149" y1="60" x2="166" y2="60" stroke="#e4ebf2"/></g>
           </g>
           <g class="prop p-test" fill="none">
             <circle cx="172" cy="92" r="20" stroke="#3b352f" stroke-width="2.5"/>
-            <circle class="spin" cx="172" cy="92" r="20" stroke="#ffa043" stroke-width="2.5" stroke-dasharray="34 92"/>
-            <path d="M164 92 l6 6 l10 -12" stroke="#9fd08c" stroke-width="2.5" stroke-linecap="square"/>
+            <circle class="spin" cx="172" cy="92" r="20" stroke="#6ee7f9" stroke-width="2.5" stroke-dasharray="34 92"/>
+            <path d="M164 92 l6 6 l10 -12" stroke="#6ee7f9" stroke-width="2.5" stroke-linecap="square"/>
           </g>
           <g class="prop p-think">
-            <circle class="rise" cx="140" cy="62" r="3" fill="#f1e9dc"/>
-            <circle class="rise" cx="152" cy="47" r="4.5" fill="#f1e9dc"/>
-            <circle class="rise" cx="167" cy="29" r="6.5" fill="#f1e9dc"/>
-            <text x="186" y="22" font-family="IBM Plex Sans Condensed, sans-serif" font-weight="700" font-size="20" fill="#ffa043">?</text>
+            <circle class="rise" cx="140" cy="62" r="3" fill="#e4ebf2"/>
+            <circle class="rise" cx="152" cy="47" r="4.5" fill="#e4ebf2"/>
+            <circle class="rise" cx="167" cy="29" r="6.5" fill="#e4ebf2"/>
+            <text x="186" y="22" font-family="IBM Plex Sans Condensed, sans-serif" font-weight="700" font-size="20" fill="#6ee7f9">?</text>
           </g>
           <g class="prop p-decide" font-family="IBM Plex Mono, monospace" font-size="10" font-weight="600" text-anchor="middle">
-            <g class="orbL"><rect x="28" y="104" width="20" height="20" fill="rgba(241,233,220,.08)" stroke="#f1e9dc"/><text x="38" y="118" fill="#f1e9dc">A</text></g>
-            <g class="orbR"><rect x="152" y="104" width="20" height="20" fill="rgba(255,160,67,.12)" stroke="#ffa043"/><text x="162" y="118" fill="#ffa043">B</text></g>
+            <g class="orbL"><rect x="28" y="104" width="20" height="20" fill="rgba(241,233,220,.08)" stroke="#e4ebf2"/><text x="38" y="118" fill="#e4ebf2">A</text></g>
+            <g class="orbR"><rect x="152" y="104" width="20" height="20" fill="rgba(110,231,249,.12)" stroke="#6ee7f9"/><text x="162" y="118" fill="#6ee7f9">B</text></g>
           </g>
-          <g class="prop p-rest" font-family="IBM Plex Sans Condensed, sans-serif" font-weight="700" fill="#b8ae9f"><text class="rise" x="136" y="54" font-size="13">z</text><text class="rise" x="147" y="40" font-size="17">z</text><text class="rise" x="160" y="24" font-size="22">z</text></g>
-          <g class="prop p-error"><path d="M168 30 l14 24 h-28z" fill="none" stroke="#ff6a55" stroke-width="1.8" stroke-linejoin="miter"/><line x1="168" y1="38" x2="168" y2="46" stroke="#ff6a55" stroke-width="2"/><rect x="167" y="49" width="2" height="2" fill="#ff6a55"/></g>
+          <g class="prop p-rest" font-family="IBM Plex Sans Condensed, sans-serif" font-weight="700" fill="#93a1b0"><text class="rise" x="136" y="54" font-size="13">z</text><text class="rise" x="147" y="40" font-size="17">z</text><text class="rise" x="160" y="24" font-size="22">z</text></g>
+          <g class="prop p-error"><path d="M168 30 l14 24 h-28z" fill="none" stroke="#ff6b81" stroke-width="1.8" stroke-linejoin="miter"/><line x1="168" y1="38" x2="168" y2="46" stroke="#ff6b81" stroke-width="2"/><rect x="167" y="49" width="2" height="2" fill="#ff6b81"/></g>
 
           <!-- the agent -->
           <g class="figure">
-            <rect x="81" y="186" width="15" height="34" rx="6" fill="#2f2b26"/>
-            <rect x="104" y="186" width="15" height="34" rx="6" fill="#2f2b26"/>
-            <path d="M76 219 h22 v6 h-24 z" fill="#ece3d4"/><path d="M102 219 h22 l2 6 h-24 z" fill="#ece3d4"/>
+            <rect x="81" y="186" width="15" height="34" rx="6" fill="#1a212a"/>
+            <rect x="104" y="186" width="15" height="34" rx="6" fill="#1a212a"/>
+            <path d="M76 219 h22 v6 h-24 z" fill="#d4dde6"/><path d="M102 219 h22 l2 6 h-24 z" fill="#d4dde6"/>
             <!-- jumpsuit -->
-            <path d="M70 126 Q100 115 130 126 L135 192 Q100 199 65 192 Z" fill="#4a443c"/>
-            <path d="M100 121 V194" stroke="#3a352f" stroke-width="1.2"/>
-            <rect x="65" y="178" width="70" height="7" fill="#3a352f"/>
-            <rect x="96" y="177" width="8" height="9" fill="#ffa043"/>
-            <rect x="108" y="138" width="14" height="9" fill="#ece3d4"/>
-            <rect x="110" y="140" width="5" height="5" fill="#ffa043"/>
-            <circle class="lamp" cx="82" cy="142" r="3.2" fill="#ffa043"/>
+            <path d="M70 126 Q100 115 130 126 L135 192 Q100 199 65 192 Z" fill="#2a3441"/>
+            <path d="M100 121 V194" stroke="#1f2731" stroke-width="1.2"/>
+            <circle class="lamp" cx="82" cy="142" r="3.2" fill="#6ee7f9"/>
             <!-- neck + collar -->
             <rect x="92" y="102" width="16" height="18" rx="4" fill="#d9a07b"/>
-            <path d="M82 121 L100 130 L118 121" fill="none" stroke="#ffa043" stroke-width="3" stroke-linejoin="round"/>
+            <path d="M82 121 L100 130 L118 121" fill="none" stroke="#6ee7f9" stroke-width="3" stroke-linejoin="round"/>
             <!-- head -->
             <circle cx="100" cy="78" r="29" fill="#e9b38c"/>
             <path d="M71 80 Q66 44 100 43 Q135 43 130 78 Q126 60 108 57 Q90 56 82 66 Q77 72 71 80 Z" fill="#2a211d"/>
             <!-- headset -->
-            <path d="M70 80 Q70 38 100 38 Q130 38 130 80" fill="none" stroke="#1d1a17" stroke-width="3.2"/>
-            <rect x="63" y="75" width="9" height="15" rx="2" fill="#1d1a17"/>
-            <rect x="128" y="75" width="9" height="15" rx="2" fill="#1d1a17"/>
-            <path d="M133 89 Q132 104 114 104" fill="none" stroke="#1d1a17" stroke-width="2"/>
-            <rect x="110" y="102" width="5" height="4" fill="#ffa043"/>
+            <path d="M70 80 Q70 38 100 38 Q130 38 130 80" fill="none" stroke="#11161c" stroke-width="3.2"/>
+            <rect x="63" y="75" width="9" height="15" rx="2" fill="#11161c"/>
+            <rect x="128" y="75" width="9" height="15" rx="2" fill="#11161c"/>
+            <path d="M133 89 Q132 104 114 104" fill="none" stroke="#11161c" stroke-width="2"/>
+            <rect x="110" y="102" width="5" height="4" fill="#6ee7f9"/>
             <!-- face -->
             <circle cx="84" cy="90" r="4.2" fill="#f08a6b" opacity=".32"/>
             <circle cx="116" cy="90" r="4.2" fill="#f08a6b" opacity=".32"/>
             <g class="look"><g class="eyes">
-              <ellipse cx="89" cy="80" rx="3.3" ry="4.3" fill="#1d1a17"/><ellipse cx="111" cy="80" rx="3.3" ry="4.3" fill="#1d1a17"/>
+              <ellipse cx="89" cy="80" rx="3.3" ry="4.3" fill="#11161c"/><ellipse cx="111" cy="80" rx="3.3" ry="4.3" fill="#11161c"/>
               <circle cx="90.2" cy="78.4" r="1.1" fill="#fff"/><circle cx="112.2" cy="78.4" r="1.1" fill="#fff"/>
             </g></g>
-            <g class="closed" fill="none" stroke="#1d1a17" stroke-width="2" stroke-linecap="round"><path d="M85 81 Q89 84 93 81"/><path d="M107 81 Q111 84 115 81"/></g>
-            <g class="happy" fill="none" stroke="#1d1a17" stroke-width="2.2" stroke-linecap="round"><path d="M85 82 Q89 76 93 82"/><path d="M107 82 Q111 76 115 82"/></g>
+            <g class="closed" fill="none" stroke="#11161c" stroke-width="2" stroke-linecap="round"><path d="M85 81 Q89 84 93 81"/><path d="M107 81 Q111 84 115 81"/></g>
+            <g class="happy" fill="none" stroke="#11161c" stroke-width="2.2" stroke-linecap="round"><path d="M85 82 Q89 76 93 82"/><path d="M107 82 Q111 76 115 82"/></g>
             <g class="brows" fill="none" stroke="#2a211d" stroke-width="2" stroke-linecap="round"><path d="M84 72 L93 74"/><path d="M116 72 L107 74"/></g>
             <path class="mouth" d="M91 93 Q100 100 109 93" fill="none" stroke="#8c3b2e" stroke-width="2.2" stroke-linecap="round"/>
             <!-- held props -->
-            <g class="prop p-build" fill="rgba(255,160,67,.07)" stroke="#ffa043" stroke-width="1">
+            <g class="prop p-build" fill="rgba(110,231,249,.07)" stroke="#6ee7f9" stroke-width="1">
               <path d="M58 186 H142 L150 199 H50 Z"/>
               <g opacity=".7"><line x1="64" y1="192.5" x2="136" y2="192.5"/><line x1="78" y1="186" x2="73" y2="199"/><line x1="100" y1="186" x2="100" y2="199"/><line x1="122" y1="186" x2="127" y2="199"/></g>
             </g>
             <g class="prop p-log"><g transform="rotate(-8 98 156)">
-              <rect x="80" y="136" width="36" height="42" fill="#1b1916" stroke="#ffa043"/>
-              <g stroke="#f1e9dc" stroke-width="1.6"><line x1="86" y1="146" x2="108" y2="146"/><line x1="86" y1="154" x2="110" y2="154"/><line x1="86" y1="162" x2="99" y2="162"/></g>
+              <rect x="80" y="136" width="36" height="42" fill="#1b1916" stroke="#6ee7f9"/>
+              <g stroke="#e4ebf2" stroke-width="1.6"><line x1="86" y1="146" x2="108" y2="146"/><line x1="86" y1="154" x2="110" y2="154"/><line x1="86" y1="162" x2="99" y2="162"/></g>
             </g></g>
             <!-- arms -->
-            <path class="arm armL" d="M72 132 Q60 165 64 192" fill="none" stroke="#4a443c" stroke-width="13" stroke-linecap="round"/>
-            <path class="arm armR" d="M128 132 Q140 165 136 192" fill="none" stroke="#4a443c" stroke-width="13" stroke-linecap="round"/>
+            <path class="arm armL" d="M72 132 Q60 165 64 192" fill="none" stroke="#2a3441" stroke-width="13" stroke-linecap="round"/>
+            <path class="arm armR" d="M128 132 Q140 165 136 192" fill="none" stroke="#2a3441" stroke-width="13" stroke-linecap="round"/>
             <g class="hand handL" style="transform: translate(64px,192px)"><g class="hand-inner"><circle r="6.8" fill="#e9b38c"/></g></g>
             <g class="hand handR" style="transform: translate(136px,192px)"><g class="hand-inner"><circle r="6.8" fill="#e9b38c"/></g></g>
           </g>
@@ -371,27 +359,22 @@ dialog textarea { min-height: 150px; resize: vertical; font-size: 15px; }
     <div class="rightcol">
       <div class="readouts">
         <div class="cell ro hero"><div class="cap" id="roBestCap">best</div><div class="v" id="roBest">–</div><div class="s" id="roBestSub"></div></div>
-        <div class="cell ro"><div class="cap">baseline</div><div class="v" id="roBase">–</div><div class="s">experiment #1</div></div>
         <div class="cell ro"><div class="cap">improvement</div><div class="v" id="roImp">–</div><div class="s" id="roImpSub"></div></div>
         <div class="cell ro"><div class="cap">experiments</div><div class="v" id="roExp">–</div><div class="s" id="roExpSub"></div></div>
         <div class="cell ro"><div class="cap">keep rate</div><div class="v" id="roKeep">–</div><div class="s" id="roKeepSub"></div></div>
       </div>
       <div class="cell chartcell">
-        <div class="head"><div class="cap"><b>A</b> <span id="mTitle">metric per experiment</span></div><div class="legend" id="mLegend"></div></div>
+        <div class="head"><div class="cap"><span id="mTitle">metric per experiment</span></div><div class="legend" id="mLegend"></div></div>
         <div class="chart" id="mChart"></div>
       </div>
       <div class="bottom">
         <div class="cell chartcell">
-          <div class="head"><div class="cap"><b>B</b> tests passing</div><div class="legend"><span id="testsNow" style="color:var(--ink)"></span></div></div>
+          <div class="head"><div class="cap">tests passing</div><div class="legend"><span id="testsNow" style="color:var(--ink)"></span></div></div>
           <div class="chart" id="pChart"></div>
         </div>
         <div class="cell">
-          <div class="cap" style="margin-bottom:12px"><b>C</b> this run</div>
+          <div class="cap" style="margin-bottom:12px">this run</div>
           <dl class="kv" id="runKv"></dl>
-        </div>
-        <div class="cell brief">
-          <div class="cap"><b>D</b> mission brief</div>
-          <p id="brief"></p>
         </div>
       </div>
     </div>
@@ -400,10 +383,10 @@ dialog textarea { min-height: 150px; resize: vertical; font-size: 15px; }
 
 <!-- ======================= SCREEN 2: RECORDS ======================= -->
 <section class="screen records" id="s2">
-  <div class="sechead"><div class="cap"><b>02</b> records</div></div>
+  <div class="sechead"><div class="cap">records</div><div class="spacer"></div><a class="btn ghost" id="dDash" target="_blank" rel="noopener">Agent's own dashboard ↗</a></div>
   <div class="ruled recgrid">
     <div class="cell panel">
-      <div class="cap"><b>E</b> comms log <span style="margin-left:auto" id="feedCount"></span></div>
+      <div class="cap">comms log <span style="margin-left:auto" id="feedCount"></span></div>
       <div class="feed" id="feed"></div>
     </div>
     <div class="cell panel">
@@ -526,6 +509,7 @@ function tween(node, to, render) {
 function renderPicker() {
   const p = projects.find(x => x.id === selected);
   $("pickName").textContent = p ? p.id : "No mission";
+  $("pickerBtn").title = p ? p.goal : "";
   $("pickStatus").replaceChildren(...(p ? [statusEl(p.status)] : []));
   $("mlist").replaceChildren(...projects.map(x => el("div", {
       class: "mi" + (x.id === selected ? " sel" : ""), onclick: () => { $("mlist").hidePopover(); select(x.id); } },
@@ -627,25 +611,24 @@ function lineFor(p, inf) {
 // ---------------- the agent: scene ----------------
 (function buildScene() {
   let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-  for (let i = 0; i < 70; i++) {
-    const c = el("svg:circle", { cx: (rnd() * 1000 - 400).toFixed(1), cy: (rnd() * 320 - 120).toFixed(1), r: (0.5 + rnd() * 0.6).toFixed(2), fill: "#f1e9dc", opacity: (0.25 + rnd() * 0.5).toFixed(2) });
+  for (let i = 0; i < 28; i++) {
+    const c = el("svg:circle", { cx: (rnd() * 1000 - 400).toFixed(1), cy: (rnd() * 320 - 120).toFixed(1), r: (0.5 + rnd() * 0.6).toFixed(2), fill: "#e4ebf2", opacity: (0.15 + rnd() * 0.35).toFixed(2) });
     if (i % 6 === 0) c.setAttribute("class", "tw");
     $("sky").append(c);
   }
   const floor = $("floor");
-  [[214, .5], [220, .38], [228, .3], [240, .22], [258, .16], [284, .12]].forEach(([y, o]) =>
+  [[214, .35], [224, .2], [240, .12], [266, .07]].forEach(([y, o]) =>
     floor.append(el("svg:line", { x1: -500, x2: 700, y1: y, y2: y, opacity: o })));
-  for (let k = -14; k <= 14; k++) floor.append(el("svg:line", { x1: 100 + k * 18, y1: 214, x2: 100 + k * 64, y2: 300, opacity: .2 }));
+  for (let k = -10; k <= 10; k++) floor.append(el("svg:line", { x1: 100 + k * 24, y1: 214, x2: 100 + k * 90, y2: 300, opacity: .09 }));
 })();
 function fitAvatar() {
   const vp = $("viewport"), cw = vp.clientWidth, ch = vp.clientHeight;
   if (!cw || !ch) return;
   const aspect = cw / ch;
-  let hv = 300, wv = hv * aspect;
+  let hv = 430, wv = hv * aspect;
   if (wv < 250) { wv = 250; hv = wv / aspect; }   // never crop the props on either side
-  const x0 = 100 - wv / 2, y0 = 266 - hv;          // feet sit just above the bottom HUD
+  const x0 = 100 - wv / 2, y0 = 280 - hv;          // feet sit just above the bottom HUD
   $("avatar").setAttribute("viewBox", `${x0.toFixed(1)} ${y0.toFixed(1)} ${wv.toFixed(1)} ${hv.toFixed(1)}`);
-  $("moon").setAttribute("transform", `translate(${(x0 + 44).toFixed(1)} ${(y0 + 72).toFixed(1)})`);  // top-left: clear of every prop
 }
 new ResizeObserver(fitAvatar).observe($("viewport"));
 
@@ -664,8 +647,8 @@ const POSES = {
   celebrate: { L: [[54, 106], [48, 76]], R: [[146, 106], [152, 76]], mouth: "M88 91 Q100 108 112 91" },
   error:     { L: [[60, 165], [64, 192]], R: [[152, 110], [126, 54]], mouth: "M92 98 Q100 92 108 98" },
 };
-const LAMP = { boot: "#f1e9dc", study: "#ffa043", think: "#f1e9dc", build: "#ffa043", test: "#9fd08c", decide: "#ffa043",
-  log: "#ffa043", rest: "#7f766a", celebrate: "#9fd08c", error: "#ff6a55" };
+const LAMP = { boot: "#e4ebf2", study: "#6ee7f9", think: "#e4ebf2", build: "#6ee7f9", test: "#6ee7f9", decide: "#6ee7f9",
+  log: "#6ee7f9", rest: "#566473", celebrate: "#6ee7f9", error: "#ff6b81" };
 
 function setAvatar(stage) {
   const svg = $("avatar");
@@ -680,12 +663,12 @@ function setAvatar(stage) {
   }
   const m = svg.querySelector(".mouth");
   m.setAttribute("d", pose.mouth); m.style.d = `path("${pose.mouth}")`;
-  svg.querySelector(".lamp").setAttribute("fill", LAMP[stage] || "#ffa043");
+  svg.querySelector(".lamp").setAttribute("fill", LAMP[stage] || "#6ee7f9");
 }
 
 function renderTape(inf) {
   const box = $("tape");
-  if (!box.childElementCount) box.append(...STAGES.map(([, label], i) => el("div", {}, `0${i + 1}`, el("span", { text: label }))));
+  if (!box.childElementCount) box.append(...STAGES.map(([, label]) => el("div", {}, el("span", { text: label }))));
   const cur = STAGE_IDS.indexOf(inf.stage);
   [...box.children].forEach((n, i) => { n.className = i === cur ? "cur" : i <= inf.reached ? "done" : ""; });
 }
@@ -731,7 +714,6 @@ function renderAgent(p) {
   const elapsed = running && s.current && s.session_started_at ? (now - new Date(s.session_started_at)) / 1000 : null;
   $("live").classList.toggle("live", running);
   $("live").lastChild.textContent = running ? "LIVE" : "STANDBY";
-  $("hudStage").textContent = STAGE_NAMES[stage].toUpperCase();
   $("hudTime").textContent = running && s.current ? `${s.phase === 1 ? "BASELINE" : "EXP " + expLabel(s.current)} · T+${fmtDur(elapsed)}` : "";
   $("ttyStage").textContent = STAGE_NAMES[stage];
   $("clock").textContent = running && s.current ? `${s.phase === 1 ? "baseline" : "experiment " + expLabel(s.current)} · ${fmtDur(elapsed)}` : "";
@@ -748,10 +730,9 @@ function renderReadouts(p) {
   tween($("roBest"), p.best, v => fmt(v) + (isNum(v) ? unit : ""));
   $("roBestSub").textContent = `${dir} is better${m.description ? " · " + m.description : ""}`;
   $("roBestSub").title = m.description || "";
-  tween($("roBase"), p.baseline, fmt);
   tween($("roImp"), impPct, v => isNum(v) ? `${v > 0 ? "+" : ""}${v.toFixed(1)}%` : "–");
   $("roImp").className = "v " + (isNum(impPct) && impPct > 0 ? "up" : isNum(impPct) && impPct < 0 ? "down" : "");
-  $("roImpSub").textContent = isNum(imp) ? `${fmt(p.baseline)} → ${fmt(p.best)}` : "";
+  $("roImpSub").textContent = isNum(imp) ? `from baseline ${fmt(p.baseline)}` : "";
   tween($("roExp"), exps.length, v => String(Math.round(v)));
   $("roExpSub").textContent = `${disc} discarded`;
   tween($("roKeep"), exps.length ? (kept / exps.length) * 100 : null, v => isNum(v) ? `${Math.round(v)}%` : "–");
@@ -770,7 +751,6 @@ function renderReadouts(p) {
   ];
   $("runKv").replaceChildren(...kv.flatMap(r => r ? [el("dt", { text: r[0] }), el("dd", { text: r[1] })]
     : [el("div", { class: "bar" }, el("div", { style: `width:${planned ? Math.min(100, done / planned * 100) : 0}%` }))]));
-  $("brief").textContent = p.goal.replace(/[`*]/g, "").replace(/^\s*-\s+/gm, "· ");
 }
 
 // ---------------- charts ----------------
@@ -866,7 +846,6 @@ function renderCharts(p, force) {
         let d = `M${pts[0][0]},${sy(pts[0][1])}`;
         for (let i = 1; i < pts.length; i++) d += `H${pts[i][0]}V${sy(pts[i][1])}`;
         const lastX = pts[pts.length - 1][0];
-        svg.append(el("svg:path", { d: `${d}V${sy(y0)}H${pts[0][0]}Z`, fill: "var(--amber)", "fill-opacity": .07 }));
         svg.append(el("svg:path", { d, fill: "none", stroke: "var(--amber)", "stroke-width": 2, "stroke-linejoin": "round" }));
         const lv = pts[pts.length - 1][1];
         svg.append(el("svg:text", { x: lastX - 6, y: sy(lv) - 12, "text-anchor": "end", style: "fill:var(--amber);font-weight:600", text: fmt(lv) }));
