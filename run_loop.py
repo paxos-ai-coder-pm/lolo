@@ -54,7 +54,7 @@ def ensure_repo():
     gi = ROOT / ".gitignore"
     if not gi.exists():
         gi.write_text(GITIGNORE)
-    if not git("rev-parse", "HEAD").stdout.strip():
+    if git("rev-parse", "--verify", "-q", "HEAD").returncode != 0:
         git("add", "-A")
         git("commit", "-m", "Initial program.md and loop runner")
 
