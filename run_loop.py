@@ -24,6 +24,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 TEMPLATE = HERE / "program_template.md"
+BRAIN = HERE / "brain"   # the agent's long-term memory, shared by every mission
 REQUIRED_FIELDS = {
     "id", "timestamp", "hypothesis", "files_changed", "metric", "best_so_far",
     "decision", "duration_seconds", "tests_passed", "tests_total", "commit", "notes",
@@ -34,15 +35,15 @@ ALLOWED_TOOLS = [
     "Bash(ls *)", "Bash(cat *)", "Bash(head *)", "Bash(tail *)", "Bash(wc *)", "Bash(mkdir *)",
 ]
 # Runner-owned files: ignored by git so keep/revert never touches them.
-IGNORED = ["experiments.jsonl", "sessions/", "activity.jsonl", "runner_state.json", "runner.log", "runner.out", "__pycache__/"]
+IGNORED = ["experiments.jsonl", ".builder/", "sessions/", "activity.jsonl", "runner_state.json", "runner.log", "runner.out", "__pycache__/"]
 
 PHASE1_PROMPT = (
-    "Read program.md and carry out Phase 1 (build the baseline) exactly as it describes. "
-    "When the baseline is committed and logged as entry 1 in experiments.jsonl, stop."
+    "Read program.md and carry out session 1 exactly as it describes: build the first complete version, "
+    "commit it, and log it as entry 1 in experiments.jsonl. Then stop."
 )
 PHASE2_PROMPT = (
-    "Read program.md and carry out exactly one Phase 2 experiment as it describes. "
-    "This will be experiment id {next_id}. When it is logged in experiments.jsonl, stop."
+    "Read program.md and carry out exactly one improvement session as it describes. "
+    "This is attempt id {next_id}. When it is logged in experiments.jsonl, stop."
 )
 
 
@@ -54,7 +55,7 @@ def create_project(root, goal, budget=120):
     """Write program.md for a new project from the template."""
     root.mkdir(parents=True, exist_ok=True)
     text = TEMPLATE.read_text(encoding="utf-8")
-    text = text.replace("{{GOAL}}", goal.strip()).replace("{{BUDGET}}", str(int(budget)))
+    text = text.replace("{{GOAL}}", goal.strip()).replace("{{BUDGET}}", str(int(budget))).replace("{{BRAIN}}", BRAIN.as_posix())
     (root / "program.md").write_text(text, encoding="utf-8")
 
 
@@ -242,7 +243,8 @@ class Runner:
     # ---- main loop ---------------------------------------------------------
 
     def run(self, args, claude):
-        flags = ["--output-format", "stream-json", "--verbose"]
+        BRAIN.mkdir(exist_ok=True)
+        flags = ["--output-format", "stream-json", "--verbose", "--add-dir", str(BRAIN)]
         if args.skip_permissions:
             flags += ["--dangerously-skip-permissions"]
         else:
@@ -277,7 +279,8 @@ class Runner:
 
             self.save_state(current=label, phase=phase, done=i, session_started_at=now())
             self.say(f"starting {label} ({i + 1}/{planned}, phase {phase})")
-            info = self.run_session(cmd, label, args.session_timeout)
+            # session 1 runs the whole understand-to-deliver process, so it gets twice the time
+            info = self.run_session(cmd, label, args.session_timeout * (2 if phase == 1 else 1))
             entries = self.enforce_log(before)
             self.enforce_clean_tree()
 

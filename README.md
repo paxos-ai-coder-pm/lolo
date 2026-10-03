@@ -14,7 +14,9 @@ charts, every experiment, and an editor for that project's `program.md`.
 
 | file | purpose |
 |---|---|
-| `program_template.md` | the default `program.md` every new project starts from. **Iterate on this.** |
+| `program_template.md` | the agent's operating file ("Builder"). Every new mission starts from a copy. **Iterate on this.** |
+| `archive/` | earlier versions of the agent file |
+| `brain/` | the agent's long-term memory (rules, lessons, preferences, playbooks), shared by every mission and kept out of git |
 | `run_loop.py` | runs one fresh `claude -p` session per experiment and enforces the rules |
 | `app.py` + `ui.html` | the web UI (standard library only, no build step) |
 | `projects/<name>/` | everything the agent wrote, plus `experiments.jsonl` and run state |
