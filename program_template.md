@@ -5,36 +5,35 @@ code. A human will only read the results later.
 
 ## Goal
 
-Build a lossless text compressor in pure Python (standard library only).
-
-- `compress(data: bytes) -> bytes` and `decompress(blob: bytes) -> bytes`
-- You may NOT use `zlib`, `gzip`, `bz2`, `lzma`, `zipfile`, or any other compression library.
+{{GOAL}}
 
 ## Metric
 
-**Compression ratio** = total compressed bytes / total original bytes, over the corpus.
-**Lower is better.**
+If the goal names a metric, use it. Otherwise, in Phase 1, choose ONE objective number that
+a script can measure automatically and that best captures how well the goal is met.
 
-- Corpus: the 40 alphabetically-first `*.py` files directly inside the Python standard
-  library directory (`os.path.dirname(os.__file__)`).
-- A run is only valid if every file round-trips exactly (`decompress(compress(x)) == x`).
-  An invalid run counts as a failure, whatever its ratio.
-- The full evaluation must finish within **120 seconds**. Slower counts as a failure.
+- Record it in `metric.json`:
+  `{"name": "...", "direction": "lower" | "higher", "unit": "...", "description": "..."}`
+- Benchmark inputs must be fixed and deterministic so every run is comparable.
+- A run is only valid if all tests pass. An invalid run counts as a failure, whatever its metric.
+- The full evaluation must finish within **{{BUDGET}} seconds**. Slower counts as a failure.
 
 ## Files
 
-- `evaluate.py` — runs the tests and the benchmark, prints one JSON object to stdout:
+- `evaluate.py` runs the tests and the benchmark, then prints one JSON object to stdout:
   `{"metric": float, "tests_passed": int, "tests_total": int, "duration_seconds": float}`
-- `experiments.jsonl` — the experiment log (see below).
-- `dashboard.html` — progress dashboard (see Phase 1).
-- Everything else is up to you.
+- `metric.json` describes the metric (see above).
+- `experiments.jsonl` is the experiment log (see below).
+- `dashboard.html` is the progress dashboard (see Phase 1).
+- Everything else is up to you. Prefer Python and its standard library. You cannot rely on
+  installing anything.
 
 ## Rules
 
-- Never edit `program.md` or `run_loop.py`.
+- Never edit `program.md`.
 - Never edit or delete existing lines of `experiments.jsonl`. Only append.
-- Do not change how the metric is computed or which corpus is used after the baseline.
-- Do not embed corpus content in the code or read the corpus during decompression.
+- After the baseline, never change `metric.json`, the benchmark inputs, or how the metric is computed.
+- Never special-case the benchmark inputs to game the metric.
 - Do not run `git clean -x` or anything else that deletes ignored files.
 - Do exactly one unit of work per session (the baseline, or one experiment), then stop.
 
@@ -60,9 +59,10 @@ Append one JSON object per line to `experiments.jsonl` for every evaluation, inc
 
 (Use this phase when `experiments.jsonl` is missing or empty.)
 
-1. Design the simplest architecture that works. Minimal and correct beats ambitious.
-2. Write the code, the tests, and `evaluate.py`.
-3. Build `dashboard.html`: one self-contained page (no build step, no external downloads
+1. Decide the metric and write `metric.json`.
+2. Design the simplest architecture that works. Minimal and correct beats ambitious.
+3. Write the code, the tests, and `evaluate.py`.
+4. Build `dashboard.html`: one self-contained page (no build step, no external downloads
    required to show data) that fetches `experiments.jsonl` and shows:
    - Summary cards: current best, starting baseline, total improvement (absolute and %),
      total experiments, kept vs discarded, keep rate
@@ -70,8 +70,8 @@ Append one JSON object per line to `experiments.jsonl` for every evaluation, inc
    - A chart of test pass rate over time
    - A sortable, filterable table: id, hypothesis, metric, decision, duration, notes
    - Auto-refresh every few seconds
-   It is served with `python -m http.server` from the repo root.
-4. Run `evaluate.py`, confirm it works end to end, commit everything, then append entry
+   It is served over HTTP from the repo root.
+5. Run `evaluate.py`, confirm it works end to end, commit everything, then append entry
    `id: 1` with `decision: "kept"` and the commit hash.
 
 ## Phase 2: Improve
