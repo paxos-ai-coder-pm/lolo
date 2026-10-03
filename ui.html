@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Loop Agent</title>
+<title>LoLo · tell me what to build</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cline x1='20' y1='9' x2='20' y2='4.5' stroke='%23f4f4f5' stroke-width='2.2' stroke-linecap='round'/%3E%3Ccircle cx='20' cy='4' r='2.6' fill='%23e5484d'/%3E%3Crect x='3.5' y='9' width='33' height='27' rx='12.5' fill='%23f4f4f5'/%3E%3Crect x='8' y='14' width='24' height='16' rx='8' fill='%230b0b0c'/%3E%3Crect x='13' y='18.2' width='3.6' height='6.4' rx='1.8' fill='%23f4f4f5'/%3E%3Crect x='23.4' y='18.2' width='3.6' height='6.4' rx='1.8' fill='%23f4f4f5'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
@@ -16,10 +17,10 @@
 <style>
 :root {
   color-scheme: dark;
-  --bg: #0f1c1f; --panel: #152629; --panel-2: #1b2f33; --rule: #223a3e; --rule-2: #2f4b50;
-  --ink: #e3eeec; --ink-2: #aac1bf; --muted: #7f9896;
-  --mint: #6fdcbf; --mint-dim: #3b8f7c; --mint-ink: #0a2620;
-  --peach: #ffb48a; --red: #f08a7e;
+  --bg: #0b0b0c; --panel: #141416; --panel-2: #1b1b1e; --rule: #242428; --rule-2: #323237;
+  --ink: #ededee; --ink-2: #b3b3b8; --muted: #84848b;
+  --accent: #e5484d; --accent-dim: #8f2a2e; --accent-ink: #ffffff;
+  --hi: #f4f4f5; --red: #ff6b6b;
   --sans: "Nunito", "Segoe UI", system-ui, sans-serif;
   --mono: "JetBrains Mono", "Cascadia Mono", Consolas, monospace;
   --r: 16px;
@@ -28,9 +29,9 @@
 [hidden] { display: none !important; }
 html { scroll-snap-type: y proximity; background: var(--bg); }
 html.locked { overflow: hidden; }
-body { margin: 0; font: 14px/1.5 var(--sans); color: var(--ink); background: radial-gradient(1200px 600px at 30% -10%, #17302f 0%, transparent 60%), var(--bg); }
+body { margin: 0; font: 14px/1.5 var(--sans); color: var(--ink); background: radial-gradient(1200px 600px at 30% -10%, #1a1a1e 0%, transparent 60%), var(--bg); }
 button, input, select, textarea { font: inherit; color: inherit; }
-::selection { background: var(--mint); color: var(--mint-ink); }
+::selection { background: var(--hi); color: var(--accent-ink); }
 .num { font-variant-numeric: tabular-nums; }
 
 /* ---------- frame ---------- */
@@ -43,14 +44,18 @@ button, input, select, textarea { font: inherit; color: inherit; }
 
 /* ---------- top bar ---------- */
 .topbar { display: flex; align-items: center; gap: 10px; min-width: 0; }
-.mark { display: flex; align-items: center; gap: 10px; font: 800 17px var(--sans); margin-right: 6px; white-space: nowrap; }
+.mark { display: flex; align-items: center; gap: 9px; margin-right: 6px; white-space: nowrap; }
+.word { font: 900 22px/1 var(--sans); letter-spacing: -.02em; color: var(--hi); }
+.word b { color: var(--accent); font-weight: 900; }
+.lbrand { position: absolute; z-index: 3; top: 22px; left: 26px; display: flex; align-items: center; gap: 10px; }
+.lbrand .word { font-size: 26px; }
 .picker { display: flex; align-items: center; gap: 10px; background: var(--panel); border: 1px solid var(--rule-2); border-radius: 12px; padding: 7px 12px; cursor: pointer; min-width: 0; max-width: 360px; }
 .picker:hover { border-color: var(--muted); }
 .picker .nm { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .status { font: 700 12px var(--sans); color: var(--ink-2); display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
 .status i { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); display: inline-block; }
-.status.running { color: var(--mint); } .status.running i { background: var(--mint); animation: pulse 1.6s ease-in-out infinite; }
-.status.finished { color: var(--peach); } .status.finished i { background: var(--peach); }
+.status.running { color: var(--accent); } .status.running i { background: var(--accent); animation: pulse 1.6s ease-in-out infinite; }
+.status.finished { color: var(--hi); } .status.finished i { background: var(--hi); }
 .status.error { color: var(--red); } .status.error i { background: var(--red); }
 @keyframes pulse { 50% { opacity: .35; } }
 .spacer { flex: 1; }
@@ -58,14 +63,14 @@ button, input, select, textarea { font: inherit; color: inherit; }
   cursor: pointer; font: 700 14px var(--sans); white-space: nowrap; text-decoration: none; color: var(--ink); transition: background .15s, border-color .15s, transform .1s; }
 .btn:hover:not(:disabled) { border-color: var(--muted); }
 .btn:active:not(:disabled) { transform: translateY(1px); }
-.btn.go { background: var(--mint); border-color: var(--mint); color: var(--mint-ink); }
-.btn.go:hover:not(:disabled) { background: #8be6cf; border-color: #8be6cf; }
+.btn.go { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.go:hover:not(:disabled) { background: #ee5f63; border-color: #ee5f63; }
 .btn.ghost { border-color: transparent; background: none; color: var(--ink-2); }
 .btn.ghost:hover:not(:disabled) { color: var(--ink); background: var(--panel); }
 .btn.big { height: 46px; padding: 0 24px; font-size: 16px; border-radius: 14px; }
 .btn:disabled { opacity: .4; cursor: default; }
-.field { background: #0d1a1c; border: 1px solid var(--rule-2); border-radius: 10px; padding: 8px 10px; outline: none; }
-.field:focus { border-color: var(--mint); box-shadow: 0 0 0 3px rgba(111, 220, 191, .15); }
+.field { background: #0e0e10; border: 1px solid var(--rule-2); border-radius: 10px; padding: 8px 10px; outline: none; }
+.field:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(229, 72, 77, .18); }
 .lbl { font: 600 12.5px var(--sans); color: var(--muted); }
 #mlist { margin: 0; padding: 6px; border: 1px solid var(--rule-2); border-radius: 14px; background: var(--panel-2); color: var(--ink); width: 360px; max-height: 60vh; overflow: auto; inset: auto; }
 .mi { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; padding: 10px 12px; border-radius: 10px; cursor: pointer; font-weight: 700; }
@@ -78,26 +83,26 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .rightcol { display: grid; grid-template-rows: auto 1fr minmax(150px, 30%); gap: 10px; min-height: 0; }
 .novacard { display: grid; grid-template-columns: 46% 1fr; gap: 10px; min-height: 0; }
 
-.viewport { padding: 0; overflow: hidden; background: radial-gradient(120% 90% at 50% 30%, #1d3a3a 0%, #122326 70%); }
+.viewport { padding: 0; overflow: hidden; background: radial-gradient(120% 90% at 50% 30%, #222226 0%, #121214 70%); }
 .viewport canvas.nova3d, .herostage canvas.nova3d, #lnovaBox canvas.nova3d { position: absolute; inset: 0; width: 100% !important; height: 100% !important; display: block; }
 .novafallback { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); font-weight: 700; }
 .hud { position: absolute; z-index: 2; top: 10px; left: 12px; right: 12px; display: flex; justify-content: space-between; font: 700 12px var(--sans); color: var(--muted); pointer-events: none; }
-.hud .on { color: var(--mint); }
-.idlemsg { position: absolute; z-index: 2; left: 10px; right: 10px; bottom: 10px; text-align: center; background: rgba(13, 26, 28, .72); border-radius: 10px; padding: 5px 8px; font-weight: 800; font-size: 12.5px; line-height: 1.35; }
+.hud .on { color: var(--accent); }
+.idlemsg { position: absolute; z-index: 2; left: 10px; right: 10px; bottom: 10px; text-align: center; background: rgba(10, 10, 12, .75); border-radius: 10px; padding: 5px 8px; font-weight: 800; font-size: 12.5px; line-height: 1.35; }
 .idlemsg small { display: block; font-weight: 600; color: var(--ink-2); font-size: 11.5px; }
-.cheer { position: absolute; z-index: 3; left: 0; right: 0; top: 14%; text-align: center; font: 900 22px var(--sans); color: var(--peach); display: none; pointer-events: none; text-shadow: 0 2px 12px rgba(0,0,0,.4); }
+.cheer { position: absolute; z-index: 3; left: 0; right: 0; top: 14%; text-align: center; font: 900 22px var(--sans); color: var(--accent); display: none; pointer-events: none; text-shadow: 0 2px 12px rgba(0,0,0,.4); }
 .cheer small { display: block; font: 800 16px var(--sans); color: var(--ink); }
 .cheer.show { display: block; animation: rise .6s cubic-bezier(.3,1.5,.5,1); }
 @keyframes rise { from { transform: translateY(14px) scale(.9); opacity: 0; } }
 
 .sheet { display: flex; flex-direction: column; gap: 10px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--rule-2) transparent; }
 .sheet .model { display: flex; align-items: center; gap: 8px; }
-.sheet .model i { width: 8px; height: 8px; border-radius: 50%; background: var(--mint); flex: none; }
+.sheet .model i { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex: none; }
 .sheet .model span { font: 500 13px var(--mono); color: var(--ink); }
 .sheet .meta { font-size: 12.5px; color: var(--muted); margin-top: -6px; }
 .abil { display: grid; grid-template-columns: 58px 1fr 40px; gap: 5px 8px; align-items: center; font: 600 12.5px var(--sans); color: var(--ink-2); }
 .abil .bar { height: 7px; border-radius: 4px; background: var(--rule); overflow: hidden; }
-.abil .bar i { display: block; height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--mint-dim), var(--mint)); transition: width .6s; }
+.abil .bar i { display: block; height: 100%; border-radius: 4px; background: linear-gradient(90deg, #5c5c63, var(--hi)); transition: width .6s; }
 .abil .lv { text-align: right; color: var(--muted); font: 12px var(--mono); }
 .chips { display: flex; flex-wrap: wrap; gap: 5px; }
 .chips span { font: 600 12px var(--sans); color: var(--ink-2); background: var(--panel-2); border: 1px solid var(--rule-2); border-radius: 999px; padding: 2px 9px; }
@@ -110,21 +115,21 @@ button, input, select, textarea { font: inherit; color: inherit; }
 
 .speech { padding: 14px 18px; }
 .speech::before { content: ""; position: absolute; top: -8px; left: 22%; width: 14px; height: 14px; background: var(--panel); border-left: 1px solid var(--rule); border-top: 1px solid var(--rule); transform: rotate(45deg); }
-.speech .who { display: flex; justify-content: space-between; font-weight: 800; font-size: 13px; color: var(--mint); margin-bottom: 4px; }
+.speech .who { display: flex; justify-content: space-between; font-weight: 800; font-size: 13px; color: var(--accent); margin-bottom: 4px; }
 .speech .who span:last-child { color: var(--muted); font-weight: 700; }
 .speech .line { font-size: 16px; line-height: 1.45; min-height: 2.9em; max-height: 2.9em; overflow: hidden; }
 
 .steps { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; padding: 10px; }
 .steps div { padding: 7px 4px; text-align: center; font: 700 12.5px var(--sans); color: var(--muted); border-radius: 10px; background: var(--panel-2); transition: background .3s, color .3s; }
-.steps div.done { color: var(--ink); background: rgba(111, 220, 191, .14); }
-.steps div.cur { color: var(--mint-ink); background: var(--mint); }
+.steps div.done { color: var(--ink); background: rgba(229, 72, 77, .14); }
+.steps div.cur { color: var(--accent-ink); background: var(--accent); }
 
 .readouts { display: grid; grid-template-columns: 1.5fr repeat(3, 1fr); gap: 10px; }
 .ro { display: flex; flex-direction: column; gap: 2px; justify-content: space-between; }
 .ro .v { font: 800 34px/1.1 var(--sans); font-variant-numeric: tabular-nums; }
 .ro .s { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ro.hero .v { font-size: 46px; color: var(--peach); }
-.up { color: var(--mint) !important; } .down { color: var(--red) !important; }
+.ro.hero .v { font-size: 46px; color: var(--accent); }
+.up { color: var(--hi) !important; } .down { color: var(--red) !important; }
 
 .chartcard { display: flex; flex-direction: column; gap: 8px; }
 .chartcard .head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
@@ -134,14 +139,14 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .legend { display: flex; gap: 14px; font: 600 12px var(--sans); color: var(--ink-2); }
 .legend span { display: inline-flex; align-items: center; gap: 6px; }
 .tip { position: absolute; z-index: 5; pointer-events: none; display: none; background: var(--panel-2); border: 1px solid var(--rule-2); border-radius: 12px; padding: 10px 12px; max-width: 340px; font-size: 13px; box-shadow: 0 8px 24px rgba(0,0,0,.3); }
-.tip b { font: 800 20px var(--sans); color: var(--peach); }
+.tip b { font: 800 20px var(--sans); color: var(--accent); }
 .tip .m { font-size: 12px; color: var(--muted); }
 .bottom { display: grid; grid-template-columns: 1.4fr 1fr; gap: 10px; min-height: 0; }
 .learnt { display: flex; flex-direction: column; gap: 8px; overflow: auto; scrollbar-width: thin; scrollbar-color: var(--rule-2) transparent; }
 .learnt ul { margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
 .learnt li { list-style: none; display: grid; grid-template-columns: 30px 1fr; gap: 8px; font-size: 13px; color: var(--ink-2); }
 .learnt li b { font: 800 14px var(--sans); color: var(--muted); padding-top: 1px; }
-.learnt li.kept b { color: var(--mint); }
+.learnt li.kept b { color: var(--accent); }
 .learnt li .what { color: var(--ink); font-weight: 700; }
 
 /* empty state */
@@ -164,9 +169,9 @@ body.no-missions .board, body.no-missions #s2, body.no-missions .runctl { displa
 .ev .t { color: var(--muted); font: 11.5px var(--mono); padding-top: 2px; }
 .ev .k { font-weight: 800; font-size: 12px; padding-top: 1px; }
 .ev .x { white-space: pre-wrap; word-break: break-word; }
-.ev.text .k { color: var(--peach); }
+.ev.text .k { color: var(--accent); }
 .ev.tool .k { color: var(--muted); } .ev.tool .x { font: 12px var(--mono); color: var(--ink-2); }
-.ev.runner .k, .ev.runner .x { color: var(--mint); } .ev.runner .x { font-weight: 700; }
+.ev.runner .k, .ev.runner .x { color: var(--hi); } .ev.runner .x { font-weight: 700; }
 .tabs { display: flex; gap: 6px; }
 .tabs button { background: none; border: 0; border-radius: 10px; padding: 6px 12px; cursor: pointer; font-weight: 700; color: var(--muted); }
 .tabs button[aria-selected="true"] { color: var(--ink); background: var(--panel-2); }
@@ -180,7 +185,7 @@ td.n { font: 12.5px var(--mono); text-align: right; white-space: nowrap; }
 td .note { color: var(--muted); font-size: 12.5px; margin-top: 3px; }
 .dec { font-weight: 700; font-size: 12.5px; display: inline-flex; align-items: center; gap: 6px; color: var(--muted); }
 .dec i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; background: var(--muted); }
-.dec.kept { color: var(--mint); } .dec.kept i { background: var(--mint); }
+.dec.kept { color: var(--hi); } .dec.kept i { background: var(--hi); }
 .directives { flex: 1; display: flex; flex-direction: column; gap: 10px; min-height: 0; }
 .directives textarea { flex: 1; resize: none; font: 12.5px/1.55 var(--mono); }
 .hint { font-size: 12.5px; color: var(--muted); }
@@ -188,7 +193,7 @@ td .note { color: var(--muted); font-size: 12.5px; margin-top: 3px; }
 
 /* ---------- dialogs ---------- */
 dialog { background: var(--panel); color: var(--ink); border: 1px solid var(--rule-2); border-radius: 20px; padding: 0; width: min(620px, 92vw); }
-dialog::backdrop { background: rgba(6, 14, 15, 0.7); backdrop-filter: blur(3px); }
+dialog::backdrop { background: rgba(0, 0, 0, 0.72); backdrop-filter: blur(3px); }
 dialog form { display: grid; gap: 14px; padding: 22px 24px 24px; }
 dialog h2 { margin: 0; font: 900 22px var(--sans); }
 dialog label { font-weight: 700; font-size: 13px; color: var(--ink-2); display: grid; gap: 6px; }
@@ -200,7 +205,7 @@ dialog.big .bar { display: flex; justify-content: space-between; align-items: ce
 dialog.big iframe { width: 100%; height: calc(100% - 52px); border: 0; background: #fff; display: block; }
 
 /* ---------- landing ---------- */
-.landing { position: fixed; inset: 0; z-index: 50; background: radial-gradient(900px 600px at 50% 20%, #1b3636 0%, transparent 70%), var(--bg); display: grid; place-items: center; transition: opacity .7s ease; overflow: hidden; }
+.landing { position: fixed; inset: 0; z-index: 50; background: radial-gradient(900px 600px at 50% 20%, #232327 0%, transparent 70%), var(--bg); display: grid; place-items: center; transition: opacity .7s ease; overflow: hidden; }
 .landing.gone { opacity: 0; pointer-events: none; }
 #lcv { position: absolute; inset: 0; width: 100%; height: 100%; }
 #lnovaBox { position: absolute; left: 50%; top: calc(50% - 330px); width: 230px; height: 230px; transform: translateX(-50%); transition: top .9s cubic-bezier(.5,0,.2,1), transform .9s cubic-bezier(.5,0,.2,1); z-index: 1; }
@@ -208,20 +213,20 @@ dialog.big iframe { width: 100%; height: calc(100% - 52px); border: 0; backgroun
 .lcontent { position: relative; z-index: 2; width: min(680px, 90vw); display: flex; flex-direction: column; align-items: center; gap: 16px; text-align: center; padding-top: 150px; transition: opacity .4s, transform .4s; }
 .landing.launching .lcontent { opacity: 0; transform: translateY(16px); pointer-events: none; }
 .landing h1 { margin: 0; font: 900 48px/1.08 var(--sans); letter-spacing: -.01em; }
-.landing h1 span { color: var(--mint); }
+.landing h1 span { color: var(--accent); }
 .landing .pitch { margin: 0; color: var(--ink-2); font-size: 16px; max-width: 540px; }
 .lform { width: 100%; display: flex; flex-direction: column; gap: 10px; }
 .lform textarea { width: 100%; min-height: 92px; resize: none; font-size: 18px; padding: 14px 16px; border-radius: 16px; }
 .lform .row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 .skip { background: none; border: 0; color: var(--ink-2); font-weight: 700; cursor: pointer; padding: 6px 8px; }
 .skip:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 4px; }
-.lstatus { position: absolute; z-index: 2; left: 50%; bottom: 12vh; transform: translateX(-50%); width: min(520px, 90vw); display: none; flex-direction: column; gap: 12px; padding: 16px 18px; border-radius: 16px; background: rgba(15, 28, 31, .85); border: 1px solid var(--rule-2); }
+.lstatus { position: absolute; z-index: 2; left: 50%; bottom: 12vh; transform: translateX(-50%); width: min(520px, 90vw); display: none; flex-direction: column; gap: 12px; padding: 16px 18px; border-radius: 16px; background: rgba(12, 12, 14, .88); border: 1px solid var(--rule-2); }
 .landing.launching .lstatus { display: flex; }
 .lstatus .lines { font-size: 17px; min-height: 4.4em; }
 .lstatus .lines div { animation: fadein .3s; }
 .lstatus .lines div.done { color: var(--muted); }
 .lstatus .prog { height: 8px; border-radius: 4px; background: var(--rule); overflow: hidden; }
-.lstatus .prog i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--mint), var(--peach)); transition: width .7s ease; border-radius: 4px; }
+.lstatus .prog i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--accent), var(--hi)); transition: width .7s ease; border-radius: 4px; }
 
 @media (max-width: 1100px), (max-height: 620px) {
   html { scroll-snap-type: none; }
@@ -241,13 +246,22 @@ dialog.big iframe { width: 100%; height: calc(100% - 52px); border: 0; backgroun
 <!-- ======================= LANDING ======================= -->
 <section class="landing" id="landing" aria-label="Welcome">
   <canvas id="lcv" aria-hidden="true"></canvas>
-  <div id="lnovaBox" role="img" aria-label="Nova, waving hello"></div>
+  <div class="lbrand"><svg class="logo" width="34" height="34" viewBox="0 0 40 40" aria-hidden="true">
+        <line x1="20" y1="9" x2="20" y2="4.5" stroke="#f4f4f5" stroke-width="2.2" stroke-linecap="round"/>
+        <circle cx="20" cy="4" r="2.6" fill="#e5484d"/>
+        <rect x="3.5" y="9" width="33" height="27" rx="12.5" fill="#f4f4f5"/>
+        <rect x="8" y="14" width="24" height="16" rx="8" fill="#0b0b0c"/>
+        <rect x="13" y="18.2" width="3.6" height="6.4" rx="1.8" fill="#f4f4f5"/>
+        <rect x="23.4" y="18.2" width="3.6" height="6.4" rx="1.8" fill="#f4f4f5"/>
+        <circle cx="10.6" cy="27" r="1.6" fill="#e5484d" opacity=".85"/><circle cx="29.4" cy="27" r="1.6" fill="#e5484d" opacity=".85"/>
+      </svg><span class="word">L<b>o</b>L<b>o</b></span></div>
+  <div id="lnovaBox" role="img" aria-label="LoLo, waving hello"></div>
   <div class="lcontent">
     <h1>Just tell me what to build.<br><span>I'll keep making it better.</span></h1>
-    <p class="pitch">No coding needed. Describe your idea in a sentence. Nova builds a first version that works, then keeps trying improvements and only keeps the ones that make it better.</p>
+    <p class="pitch">No coding needed. Describe your idea in a sentence. LoLo builds a first version that works, then keeps trying improvements and only keeps the ones that make it better.</p>
     <form class="lform" id="lform">
-      <textarea class="field" id="lgoal" placeholder="e.g. An app that plans my weekly meals from what's in my fridge" aria-label="What should Nova build?"></textarea>
-      <div class="row"><span class="hint">Press Enter to start · Shift+Enter for a new line</span><button class="btn go big" type="submit">Start building</button></div>
+      <textarea class="field" id="lgoal" placeholder="e.g. An app that plans my weekly meals from what's in my fridge" aria-label="What should LoLo build?"></textarea>
+      <div class="row"><span class="hint">Write as much as you like. Click the button when you're ready.</span><button class="btn go big" type="submit">Start building</button></div>
       <div class="err" id="lerr"></div>
     </form>
     <button class="skip" id="lskip" type="button">Skip to mission control →</button>
@@ -259,8 +273,16 @@ dialog.big iframe { width: 100%; height: calc(100% - 52px); border: 0; backgroun
 <section class="screen mission" id="s1">
   <header class="topbar">
     <div class="mark">
-      <svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true"><circle cx="13" cy="13" r="11" fill="none" stroke="#6fdcbf" stroke-width="2.5"/><path d="M13 2 A11 11 0 0 1 24 13" fill="none" stroke="#ffb48a" stroke-width="2.5" stroke-linecap="round"/><circle cx="13" cy="13" r="3.5" fill="#6fdcbf"/></svg>
-      Loop Agent
+      <svg class="logo" width="30" height="30" viewBox="0 0 40 40" aria-hidden="true">
+        <line x1="20" y1="9" x2="20" y2="4.5" stroke="#f4f4f5" stroke-width="2.2" stroke-linecap="round"/>
+        <circle cx="20" cy="4" r="2.6" fill="#e5484d"/>
+        <rect x="3.5" y="9" width="33" height="27" rx="12.5" fill="#f4f4f5"/>
+        <rect x="8" y="14" width="24" height="16" rx="8" fill="#0b0b0c"/>
+        <rect x="13" y="18.2" width="3.6" height="6.4" rx="1.8" fill="#f4f4f5"/>
+        <rect x="23.4" y="18.2" width="3.6" height="6.4" rx="1.8" fill="#f4f4f5"/>
+        <circle cx="10.6" cy="27" r="1.6" fill="#e5484d" opacity=".85"/><circle cx="29.4" cy="27" r="1.6" fill="#e5484d" opacity=".85"/>
+      </svg>
+      <span class="word">L<b>o</b>L<b>o</b></span>
     </div>
     <button class="picker" id="pickerBtn" popovertarget="mlist" aria-label="Choose mission">
       <span class="nm" id="pickName">No mission</span><span class="status" id="pickStatus"></span>
@@ -283,9 +305,9 @@ dialog.big iframe { width: 100%; height: calc(100% - 52px); border: 0; backgroun
 
   <div class="nomission" id="nomission">
     <div class="inner">
-      <div class="herostage" id="heroStage" role="img" aria-label="Nova, asleep"></div>
+      <div class="herostage" id="heroStage" role="img" aria-label="LoLo, asleep"></div>
       <h2>No mission in progress</h2>
-      <p>Nova is taking a nap. Tell it what you'd like to build and it will wake up and get to work.</p>
+      <p>LoLo is taking a nap. Tell it what you'd like to build and it will wake up and get to work.</p>
       <button class="btn go big" id="heroNew">Start a mission</button>
     </div>
   </div>
@@ -299,7 +321,7 @@ dialog.big iframe { width: 100%; height: calc(100% - 52px); border: 0; backgroun
           <div class="cheer" id="cheer"><span id="cheerTitle">New best!</span><small id="cheerSub" class="num"></small></div>
         </div>
         <div class="card sheet">
-          <div class="cap">Nova</div>
+          <div class="cap">LoLo</div>
           <div class="model" id="sheetModel" title=""><i></i><span>model unknown</span></div>
           <div class="meta" id="sheetMeta"></div>
           <div class="abil" id="abil"></div>
@@ -307,8 +329,8 @@ dialog.big iframe { width: 100%; height: calc(100% - 52px); border: 0; backgroun
           <div class="chips" id="chips"></div>
         </div>
       </div>
-      <div class="card monitor none" id="monitor"><div class="msg">Nova's own dashboard appears here once the first version is built.</div></div>
-      <div class="card speech"><div class="who"><span>Nova</span><span id="speechStage">asleep</span></div><div class="line" id="tty" aria-live="polite"></div></div>
+      <div class="card monitor none" id="monitor"><div class="msg">LoLo's own dashboard appears here once the first version is built.</div></div>
+      <div class="card speech"><div class="who"><span>LoLo</span><span id="speechStage">asleep</span></div><div class="line" id="tty" aria-live="polite"></div></div>
       <div class="card steps" id="steps"></div>
     </div>
 
@@ -329,7 +351,7 @@ dialog.big iframe { width: 100%; height: calc(100% - 52px); border: 0; backgroun
           <div class="chart" id="pChart"></div>
         </div>
         <div class="card learnt">
-          <div class="cap">What Nova learnt</div>
+          <div class="cap">What LoLo learnt</div>
           <ul id="learnt"></ul>
         </div>
       </div>
@@ -352,7 +374,7 @@ dialog.big iframe { width: 100%; height: calc(100% - 52px); border: 0; backgroun
       </div>
       <div class="panel" id="tabExp" style="flex:1">
         <div class="filters">
-          <input class="field" type="text" id="fText" placeholder="Search what Nova tried">
+          <input class="field" type="text" id="fText" placeholder="Search what LoLo tried">
           <select class="field" id="fDec"><option value="">All</option><option value="kept">Kept</option><option value="discarded">Dropped</option></select>
         </div>
         <div class="tablewrap"><table id="table"></table></div>
@@ -361,7 +383,7 @@ dialog.big iframe { width: 100%; height: calc(100% - 52px); border: 0; backgroun
         <textarea class="field" id="progText" spellcheck="false"></textarea>
         <div style="display:flex;gap:12px;align-items:center">
           <button class="btn go" id="progSave">Save</button>
-          <span class="hint" id="progMsg">Nova reads these instructions (program.md) at the start of every session.</span>
+          <span class="hint" id="progMsg">LoLo reads these instructions (program.md) at the start of every session.</span>
         </div>
       </div>
     </div>
@@ -369,8 +391,8 @@ dialog.big iframe { width: 100%; height: calc(100% - 52px); border: 0; backgroun
 </section>
 
 <dialog class="big" id="dashDlg">
-  <div class="bar"><span>Nova's own dashboard</span><button class="btn ghost" id="dashClose">Close</button></div>
-  <iframe id="dashBig" title="Nova's dashboard"></iframe>
+  <div class="bar"><span>LoLo's own dashboard</span><button class="btn ghost" id="dashClose">Close</button></div>
+  <iframe id="dashBig" title="LoLo's dashboard"></iframe>
 </dialog>
 
 <dialog id="newDlg">
@@ -379,7 +401,7 @@ dialog.big iframe { width: 100%; height: calc(100% - 52px); border: 0; backgroun
       <h2>New mission</h2>
       <button class="btn ghost" value="cancel" formnovalidate type="submit">Close</button>
     </div>
-    <label>What should Nova build?
+    <label>What should LoLo build?
       <textarea class="field" id="goal" placeholder="An app that plans my weekly meals from what's in my fridge"></textarea>
     </label>
     <div class="grid3">
@@ -467,7 +489,7 @@ function tween(node, to, render) {
 }
 
 // =====================================================================
-// Nova in 3D: a glossy little hover-bot built from primitives (three.js)
+// LoLo in 3D: a glossy little hover-bot built from primitives (three.js)
 // =====================================================================
 let THREE = null, RoomEnvironment = null;
 const threeReady = (async () => {
@@ -492,8 +514,8 @@ const POSES = {   // arm [forward, sideways] in radians, head [pitch, yaw, roll]
   celebrate: { L: [0, -2.65], R: [0, 2.65], head: [-0.1, 0, 0], eyes: "happy" },
   error:     { L: [-0.1, -0.14], R: [-0.4, 2.85], head: [0.05, 0, -0.16], eyes: "sad" },
 };
-const LAMP = { rest: 0x4f7f8a, idle: 0x6fdcbf, wave: 0x6fdcbf, boot: 0xffffff, study: 0x6fdcbf, think: 0xffd27a, build: 0x6fdcbf,
-  test: 0x6fdcbf, decide: 0xffb48a, log: 0x6fdcbf, celebrate: 0xffb48a, error: 0xf08a7e };
+const LAMP = { rest: 0x55555c, idle: 0xe5484d, wave: 0xe5484d, boot: 0xffffff, study: 0xe5484d, think: 0xffffff, build: 0xe5484d,
+  test: 0xe5484d, decide: 0xffffff, log: 0xe5484d, celebrate: 0xff3b40, error: 0xff3b40 };
 
 function tex(w, h, draw) {
   const c = document.createElement("canvas"); c.width = w; c.height = h;
@@ -512,7 +534,7 @@ class Nova3D {
     this.stage = opts.stage || "rest"; this.visible = true; this.pointer = [0, 0];
     this.ready = threeReady.then(ok => ok ? this.init() : this.fallback());
   }
-  fallback() { this.container.append(el("div", { class: "novafallback", text: "Nova (3D needs an internet connection)" })); }
+  fallback() { this.container.append(el("div", { class: "novafallback", text: "LoLo (3D needs an internet connection)" })); }
   init() {
     const T = THREE;
     const r = this.renderer = new T.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "low-power" });
@@ -525,9 +547,9 @@ class Nova3D {
     this.camera = new T.PerspectiveCamera(30, 1, 0.1, 100);
     this.camera.position.set(0, 0.75, this.opts.distance || 9.5);
     this.camera.lookAt(0, this.opts.lookY ?? 0.5, 0);
-    scene.add(new T.HemisphereLight(0xe6fff7, 0x0f1c1f, 0.55));
+    scene.add(new T.HemisphereLight(0xffffff, 0x0b0b0c, 0.55));
     const key = new T.DirectionalLight(0xfff0de, 1.7); key.position.set(3, 4, 5); scene.add(key);
-    const rim = new T.DirectionalLight(0x6fdcbf, 1.5); rim.position.set(-4, 2.5, -3); scene.add(rim);
+    const rim = new T.DirectionalLight(0xe5484d, 1.6); rim.position.set(-4, 2.5, -3); scene.add(rim);
     this.build();
     this.mount(this.container);
     this.io = new IntersectionObserver(es => { this.visible = es[0].isIntersecting; });
@@ -551,7 +573,7 @@ class Nova3D {
     if (!w || !h) return;
     this.renderer.setSize(w, h, false);
     this.camera.aspect = w / h;
-    // keep Nova a modest size in wide or tall boxes alike
+    // keep LoLo a modest size in wide or tall boxes alike
     const fit = Math.max(1, 1.05 / Math.min(1, w / h));
     this.camera.position.z = (this.opts.distance || 9.5) * fit;
     this.camera.updateProjectionMatrix();
@@ -568,8 +590,8 @@ class Nova3D {
     const white = new T.MeshPhysicalMaterial({ color: 0xf2f6f4, roughness: 0.3, clearcoat: 1, clearcoatRoughness: 0.12 });
     const soft = new T.MeshPhysicalMaterial({ color: 0xdfe8e5, roughness: 0.45, clearcoat: 0.6 });
     const darkGlass = new T.MeshPhysicalMaterial({ color: 0x0e1719, roughness: 0.15, clearcoat: 1, clearcoatRoughness: 0.04 });
-    this.lampMat = new T.MeshStandardMaterial({ color: 0x6fdcbf, emissive: 0x6fdcbf, emissiveIntensity: 1.6 });
-    const glow = new T.MeshStandardMaterial({ color: 0x6fdcbf, emissive: 0x6fdcbf, emissiveIntensity: 1.2 });
+    this.lampMat = new T.MeshStandardMaterial({ color: 0xe5484d, emissive: 0xe5484d, emissiveIntensity: 1.6 });
+    const glow = new T.MeshStandardMaterial({ color: 0xe5484d, emissive: 0xe5484d, emissiveIntensity: 1.2 });
 
     // face screen: eyes are painted onto a canvas that glows
     this.faceCanvas = document.createElement("canvas"); this.faceCanvas.width = 512; this.faceCanvas.height = 256;
@@ -619,13 +641,13 @@ class Nova3D {
     const T = THREE, P = this.props = {};
     const group = (name, parent = this.bot) => { const g = new T.Group(); g.userData.k = 0; g.visible = false; parent.add(g); P[name] = g; return g; };
     const lines = (accent) => tex(256, 192, (g, w, h) => {
-      g.strokeStyle = "#6fdcbf"; g.lineWidth = 6; rr(g, 4, 4, w - 8, h - 8, 18); g.stroke();
-      [[0.7, accent], [0.85, "#6fdcbf"], [0.55, "#6fdcbf"], [0.75, "#cfeee6"], [0.4, "#6fdcbf"]].forEach(([len, c], i) => { g.fillStyle = c; rr(g, 26, 30 + i * 28, (w - 52) * len, 12, 6); g.fill(); });
+      g.strokeStyle = "#f4f4f5"; g.lineWidth = 6; rr(g, 4, 4, w - 8, h - 8, 18); g.stroke();
+      [[0.7, accent], [0.85, "#f4f4f5"], [0.55, "#f4f4f5"], [0.75, "#a1a1a8"], [0.4, "#f4f4f5"]].forEach(([len, c], i) => { g.fillStyle = c; rr(g, 26, 30 + i * 28, (w - 52) * len, 12, 6); g.fill(); });
     });
 
-    // study: a floating page Nova is reading
+    // study: a floating page LoLo is reading
     const study = group("study");
-    study.add(new T.Mesh(new T.PlaneGeometry(0.9, 0.68), holo(lines("#ffb48a"))));
+    study.add(new T.Mesh(new T.PlaneGeometry(0.9, 0.68), holo(lines("#e5484d"))));
     this.scan = new T.Mesh(new T.PlaneGeometry(0.84, 0.02), new T.MeshBasicMaterial({ color: 0xe8fff8, transparent: true, opacity: 0.8, blending: T.AdditiveBlending }));
     study.add(this.scan);
     study.position.set(1.35, 1.0, 0.25); study.rotation.y = -0.4;
@@ -637,8 +659,8 @@ class Nova3D {
     // build: holographic keyboard + a screen filling with code
     const build = group("build");
     const kb = new T.Mesh(new T.PlaneGeometry(1.2, 0.42), holo(tex(256, 96, (g, w, h) => {
-      g.strokeStyle = "#6fdcbf"; g.lineWidth = 4; rr(g, 3, 3, w - 6, h - 6, 12); g.stroke();
-      g.fillStyle = "#6fdcbf"; for (let r = 0; r < 3; r++) for (let c = 0; c < 10; c++) { rr(g, 14 + c * 23.5, 14 + r * 24, 18, 16, 4); g.fill(); }
+      g.strokeStyle = "#f4f4f5"; g.lineWidth = 4; rr(g, 3, 3, w - 6, h - 6, 12); g.stroke();
+      g.fillStyle = "#f4f4f5"; for (let r = 0; r < 3; r++) for (let c = 0; c < 10; c++) { rr(g, 14 + c * 23.5, 14 + r * 24, 18, 16, 4); g.fill(); }
     }), 0.75));
     kb.rotation.x = -1.15; kb.position.set(0, -0.12, 0.72); build.add(kb);
     this.codeCanvas = document.createElement("canvas"); this.codeCanvas.width = 256; this.codeCanvas.height = 192;
@@ -648,7 +670,7 @@ class Nova3D {
 
     // test: a spinning progress ring with a tick
     const test = group("test");
-    this.ring = new T.Mesh(new T.TorusGeometry(0.3, 0.035, 12, 64, Math.PI * 1.4), new T.MeshStandardMaterial({ color: 0x6fdcbf, emissive: 0x6fdcbf, emissiveIntensity: 1.3 }));
+    this.ring = new T.Mesh(new T.TorusGeometry(0.3, 0.035, 12, 64, Math.PI * 1.4), new T.MeshStandardMaterial({ color: 0xe5484d, emissive: 0xe5484d, emissiveIntensity: 1.3 }));
     test.add(this.ring);
     const tick = new T.Mesh(new T.PlaneGeometry(0.34, 0.34), holo(tex(128, 128, (g) => { g.strokeStyle = "#ffffff"; g.lineWidth = 16; g.lineCap = "round"; g.lineJoin = "round"; g.beginPath(); g.moveTo(30, 66); g.lineTo(56, 92); g.lineTo(100, 38); g.stroke(); }), 1));
     test.add(tick); test.position.set(1.25, 1.35, 0.2);
@@ -656,33 +678,33 @@ class Nova3D {
     // decide: two little cubes, A and B
     const decide = group("decide");
     const letter = (ch, col) => new T.MeshPhysicalMaterial({ color: 0xffffff, roughness: 0.3, clearcoat: 1,
-      map: tex(128, 128, (g, w) => { g.fillStyle = col; g.fillRect(0, 0, w, w); g.fillStyle = "#0f1c1f"; g.font = "900 84px Nunito, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(ch, w / 2, w / 2 + 6); }) });
-    this.cubeA = new T.Mesh(new T.BoxGeometry(0.3, 0.3, 0.3), letter("A", "#cfeee6")); this.cubeA.position.set(-1.05, 0.62, 0.35); decide.add(this.cubeA);
-    this.cubeB = new T.Mesh(new T.BoxGeometry(0.3, 0.3, 0.3), letter("B", "#ffcfb3")); this.cubeB.position.set(1.05, 0.62, 0.35); decide.add(this.cubeB);
+      map: tex(128, 128, (g, w) => { g.fillStyle = col; g.fillRect(0, 0, w, w); g.fillStyle = "#0b0b0c"; g.font = "900 84px Nunito, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(ch, w / 2, w / 2 + 6); }) });
+    this.cubeA = new T.Mesh(new T.BoxGeometry(0.3, 0.3, 0.3), letter("A", "#f4f4f5")); this.cubeA.position.set(-1.05, 0.62, 0.35); decide.add(this.cubeA);
+    this.cubeB = new T.Mesh(new T.BoxGeometry(0.3, 0.3, 0.3), letter("B", "#e5484d")); this.cubeB.position.set(1.05, 0.62, 0.35); decide.add(this.cubeB);
 
     // log: a tablet held in both hands
     const log = group("log");
-    const tablet = new T.Mesh(new T.BoxGeometry(0.56, 0.42, 0.03), new T.MeshPhysicalMaterial({ color: 0x0e1719, roughness: 0.2, clearcoat: 1, emissive: 0xffffff, emissiveMap: lines("#ffb48a"), emissiveIntensity: 0.9 }));
+    const tablet = new T.Mesh(new T.BoxGeometry(0.56, 0.42, 0.03), new T.MeshPhysicalMaterial({ color: 0x0e1719, roughness: 0.2, clearcoat: 1, emissive: 0xffffff, emissiveMap: lines("#e5484d"), emissiveIntensity: 0.9 }));
     tablet.position.set(0, -0.08, 0.62); tablet.rotation.x = -0.55; log.add(tablet);
 
     // rest: floating Z's
     const rest = group("rest");
-    const zMat = () => new T.SpriteMaterial({ map: tex(128, 128, (g, w) => { g.fillStyle = "#9fe9d6"; g.font = "900 96px Nunito, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("z", w / 2, w / 2); }), transparent: true, depthWrite: false });
+    const zMat = () => new T.SpriteMaterial({ map: tex(128, 128, (g, w) => { g.fillStyle = "#e4e4e7"; g.font = "900 96px Nunito, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("z", w / 2, w / 2); }), transparent: true, depthWrite: false });
     this.zs = [0, 1, 2].map(i => { const s = new T.Sprite(zMat()); s.scale.setScalar(0.32 + i * 0.1); rest.add(s); return s; });
 
     // error: a little "!" sign
     const error = group("error");
-    const bang = new T.Sprite(new T.SpriteMaterial({ map: tex(128, 128, (g, w) => { g.fillStyle = "#f08a7e"; g.beginPath(); g.arc(w / 2, w / 2, 56, 0, 7); g.fill(); g.fillStyle = "#0f1c1f"; g.font = "900 88px Nunito, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("!", w / 2, w / 2 + 4); }), transparent: true }));
+    const bang = new T.Sprite(new T.SpriteMaterial({ map: tex(128, 128, (g, w) => { g.fillStyle = "#e5484d"; g.beginPath(); g.arc(w / 2, w / 2, 56, 0, 7); g.fill(); g.fillStyle = "#ffffff"; g.font = "900 88px Nunito, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("!", w / 2, w / 2 + 4); }), transparent: true }));
     bang.scale.setScalar(0.42); bang.position.set(0.95, 2.0, 0); error.add(bang);
 
     // boot: a scanning halo
     const boot = group("boot");
-    this.halo = new T.Mesh(new T.TorusGeometry(1.0, 0.012, 8, 96), new T.MeshBasicMaterial({ color: 0x6fdcbf, transparent: true, opacity: 0.8 }));
+    this.halo = new T.Mesh(new T.TorusGeometry(1.0, 0.012, 8, 96), new T.MeshBasicMaterial({ color: 0xe5484d, transparent: true, opacity: 0.85 }));
     this.halo.rotation.x = Math.PI / 2; boot.add(this.halo);
 
     // celebrate: confetti burst
     const celebrate = group("celebrate", this.scene);
-    const colors = [0x6fdcbf, 0xffb48a, 0xffe08a, 0xffffff, 0x9fd3ff];
+    const colors = [0xe5484d, 0xffffff, 0xff8a8d, 0xc9c9ce, 0xb3262b];
     this.confetti = Array.from({ length: 70 }, (_, i) => {
       const m = new T.Mesh(new T.PlaneGeometry(0.07, 0.11), new T.MeshBasicMaterial({ color: colors[i % colors.length], side: T.DoubleSide }));
       celebrate.add(m); return m;
@@ -692,7 +714,7 @@ class Nova3D {
   drawFace(expr) {
     const g = this.faceCanvas.getContext("2d"), W = 512, H = 256;
     g.fillStyle = "#000"; g.fillRect(0, 0, W, H);
-    const eye = "#8ff0d6", eyes = [[192, 116], [320, 116]];
+    const eye = "#f6f6f7", eyes = [[192, 116], [320, 116]];
     g.fillStyle = eye; g.strokeStyle = eye; g.lineCap = "round"; g.lineJoin = "round";
     const pill = (x, y, w, h) => { rr(g, x - w / 2, y - h / 2, w, h, w / 2); g.fill(); };
     const shine = (x, y) => { g.fillStyle = "#ffffff"; g.beginPath(); g.arc(x - 9, y - 18, 7, 0, 7); g.fill(); g.fillStyle = eye; };
@@ -757,7 +779,7 @@ class Nova3D {
     if (st === "decide") expr = Math.sin(t * 1.4) > 0 ? "right" : "left";
     if (["open", "focus", "right", "left", "up"].includes(expr) && t > this.blinkAt) { expr = "blink"; if (t > this.blinkAt + 0.13) this.blinkAt = t + 2.5 + Math.random() * 3; }
     if (expr !== this.expr) { this.expr = expr; this.drawFace(expr); }
-    this.lampMat.color.setHex(LAMP[st] || 0x6fdcbf); this.lampMat.emissive.setHex(LAMP[st] || 0x6fdcbf);
+    this.lampMat.color.setHex(LAMP[st] || 0xe5484d); this.lampMat.emissive.setHex(LAMP[st] || 0xe5484d);
     this.lampMat.emissiveIntensity = st === "rest" ? 0.5 : 1.3 + Math.sin(t * 3) * 0.3;
 
     // props fade/scale in for the active stage
@@ -772,9 +794,9 @@ class Nova3D {
     if (this.props.build.visible && Math.floor(t * 6) !== this.codeStep) {
       this.codeStep = Math.floor(t * 6);
       const g = this.codeCanvas.getContext("2d"), w = 256;
-      g.clearRect(0, 0, w, 192); g.strokeStyle = "#6fdcbf"; g.lineWidth = 6; rr(g, 4, 4, w - 8, 184, 18); g.stroke();
+      g.clearRect(0, 0, w, 192); g.strokeStyle = "#f4f4f5"; g.lineWidth = 6; rr(g, 4, 4, w - 8, 184, 18); g.stroke();
       const n = this.codeStep % 18;
-      [[0, 0.6, "#ffb48a"], [1, 0.8, "#6fdcbf"], [1, 0.5, "#cfeee6"], [2, 0.7, "#6fdcbf"], [1, 0.4, "#6fdcbf"]].forEach(([ind, len, c], i) => {
+      [[0, 0.6, "#e5484d"], [1, 0.8, "#f4f4f5"], [1, 0.5, "#a1a1a8"], [2, 0.7, "#f4f4f5"], [1, 0.4, "#f4f4f5"]].forEach(([ind, len, c], i) => {
         const shown = Math.max(0, Math.min(1, (n - i * 3) / 3)); if (!shown) return;
         g.fillStyle = c; rr(g, 24 + ind * 18, 26 + i * 30, (w - 70 - ind * 18) * len * shown, 12, 6); g.fill();
       });
@@ -792,7 +814,7 @@ class Nova3D {
   }
 }
 
-// one Nova for mission control; it moves between the board and the empty-state hero
+// one LoLo for mission control; it moves between the board and the empty-state hero
 const nova = new Nova3D($("viewport"), { follow: true, stage: "rest" });
 
 // ---------------- missions: picker + new ----------------
@@ -895,7 +917,7 @@ function lineFor(p, inf) {
   }
 }
 
-// ---------------- Nova panel ----------------
+// ---------------- LoLo panel ----------------
 function renderSteps(inf) {
   const box = $("steps");
   if (!box.childElementCount) box.append(...STAGES.map(([, label]) => el("div", { text: label })));
@@ -945,8 +967,8 @@ function renderAgent(p) {
   const idle = $("idleMsg");
   idle.hidden = running || !!POSES[forced];
   if (!running) idle.replaceChildren(
-    p.status === "error" ? "Nova needs help" : p.status === "finished" ? "Mission complete" : "No mission in progress",
-    el("small", { text: p.status === "error" ? "See Live activity below, then press Resume." : p.status === "finished" ? "Nova is resting. Press Resume for more attempts." : "Nova is napping. Press Resume to wake it up." }));
+    p.status === "error" ? "LoLo needs help" : p.status === "finished" ? "Mission complete" : "No mission in progress",
+    el("small", { text: p.status === "error" ? "See Live activity below, then press Resume." : p.status === "finished" ? "LoLo is resting. Press Resume for more attempts." : "LoLo is napping. Press Resume to wake it up." }));
   typeOut(now < noticeUntil ? notice : lineFor(p, inf));
 }
 
@@ -974,7 +996,7 @@ function renderSheet(p) {
   const s = p.state || {}, sess = s.sessions || [], uses = s.tool_uses || {};
   const model = s.model_used || s.model;
   $("sheetModel").lastChild.textContent = model || "Claude Code default model";
-  $("sheetModel").title = s.model_used ? "The model Nova used in its latest session" : "The model requested for this run";
+  $("sheetModel").title = s.model_used ? "The model LoLo used in its latest session" : "The model requested for this run";
   const planned = s.planned || 0, done = s.done || 0;
   const time = sess.reduce((a, x) => a + (x.seconds || 0), 0);
   $("sheetMeta").textContent = [planned ? `session ${done} of ${planned}` : null, time ? fmtDur(time) : null,
@@ -994,17 +1016,17 @@ function renderLearnt(p) {
     el("b", { text: `#${e.id}` }),
     el("div", {}, el("div", { class: "what", text: short(e.hypothesis, 110) }),
       el("div", { text: (e.decision === "kept" ? "Kept. " : "Dropped. ") + short(e.notes) }))))
-    : [el("li", {}, el("b", { text: "–" }), el("div", { text: "Each attempt teaches Nova something. Lessons show up here." }))]));
+    : [el("li", {}, el("b", { text: "–" }), el("div", { text: "Each attempt teaches LoLo something. Lessons show up here." }))]));
 }
 let monitorSrc;
 function renderMonitor(p) {
   const box = $("monitor"), src = p.has_dashboard ? `/p/${encodeURIComponent(p.id)}/dashboard.html` : null;
   if (src === monitorSrc) return;
   monitorSrc = src;
-  if (!src) { box.className = "card monitor none"; box.replaceChildren(el("div", { class: "msg", text: "Nova's own dashboard appears here once the first version is built." })); return; }
+  if (!src) { box.className = "card monitor none"; box.replaceChildren(el("div", { class: "msg", text: "LoLo's own dashboard appears here once the first version is built." })); return; }
   box.className = "card monitor";
-  box.replaceChildren(el("iframe", { src, title: "Nova's dashboard (preview)", tabindex: -1 }),
-    el("div", { class: "bar" }, el("span", { text: "Nova's own dashboard" }),
+  box.replaceChildren(el("iframe", { src, title: "LoLo's dashboard (preview)", tabindex: -1 }),
+    el("div", { class: "bar" }, el("span", { text: "LoLo's own dashboard" }),
       el("button", { class: "btn ghost", style: "height:28px", text: "Expand", onclick: () => { $("dashBig").src = src; $("dashDlg").showModal(); } })));
 }
 $("dashClose").addEventListener("click", () => $("dashDlg").close());
@@ -1063,7 +1085,7 @@ function chart(container, { xs, yDomain, yFmt = fmt, draw: drawFn, tip }) {
 }
 const key = kind => {
   const s = el("svg:svg", { width: 14, height: 10 });
-  if (kind === "line") s.append(el("svg:line", { x1: 0, x2: 14, y1: 5, y2: 5, stroke: "var(--peach)", "stroke-width": 2.5, "stroke-linecap": "round" }));
+  if (kind === "line") s.append(el("svg:line", { x1: 0, x2: 14, y1: 5, y2: 5, stroke: "var(--accent)", "stroke-width": 2.5, "stroke-linecap": "round" }));
   if (kind === "kept") s.append(el("svg:circle", { cx: 7, cy: 5, r: 4, fill: "var(--ink)" }));
   if (kind === "disc") s.append(el("svg:circle", { cx: 7, cy: 5, r: 3.5, fill: "none", stroke: "var(--muted)", "stroke-width": 1.5 }));
   if (kind === "fail") s.append(el("svg:path", { d: "M4 2l6 6M10 2l-6 6", stroke: "var(--red)", "stroke-width": 1.8, "stroke-linecap": "round" }));
@@ -1096,9 +1118,9 @@ function renderCharts(p, force) {
       if (pts.length) {
         let d = `M${pts[0][0]},${sy(pts[0][1])}`;
         for (let i = 1; i < pts.length; i++) d += `H${pts[i][0]}V${sy(pts[i][1])}`;
-        svg.append(el("svg:path", { d, fill: "none", stroke: "var(--peach)", "stroke-width": 2.5, "stroke-linejoin": "round", "stroke-linecap": "round" }));
+        svg.append(el("svg:path", { d, fill: "none", stroke: "var(--accent)", "stroke-width": 2.5, "stroke-linejoin": "round", "stroke-linecap": "round" }));
         const [lx, lv] = pts[pts.length - 1];
-        svg.append(el("svg:text", { x: lx - 6, y: sy(lv) - 10, "text-anchor": "end", style: "fill:var(--peach);font:700 13px var(--sans)", text: fmt(lv) }));
+        svg.append(el("svg:text", { x: lx - 6, y: sy(lv) - 10, "text-anchor": "end", style: "fill:var(--accent);font:700 13px var(--sans)", text: fmt(lv) }));
       }
       exps.forEach((e, i) => {
         const x = sx(xs[i]);
@@ -1120,13 +1142,13 @@ function renderCharts(p, force) {
     draw(svg, sx, sy) {
       const pts = rates.map((r, i) => [sx(xs[i]), r]).filter(([, r]) => isNum(r));
       if (!pts.length) return;
-      svg.append(el("svg:path", { d: pts.map(([x, r], i) => `${i ? "L" : "M"}${x},${sy(r)}`).join(""), fill: "none", stroke: "var(--mint)", "stroke-width": 2.5, "stroke-linejoin": "round", "stroke-linecap": "round" }));
+      svg.append(el("svg:path", { d: pts.map(([x, r], i) => `${i ? "L" : "M"}${x},${sy(r)}`).join(""), fill: "none", stroke: "var(--hi)", "stroke-width": 2.5, "stroke-linejoin": "round", "stroke-linecap": "round" }));
       const [lx, lr] = pts[pts.length - 1];
-      svg.append(el("svg:circle", { cx: lx, cy: sy(lr), r: 4.5, fill: "var(--mint)", stroke: "var(--panel)", "stroke-width": 2 }));
+      svg.append(el("svg:circle", { cx: lx, cy: sy(lr), r: 4.5, fill: "var(--hi)", stroke: "var(--panel)", "stroke-width": 2 }));
     },
     tip(i) {
       const e = exps[i];
-      return [el("div", {}, el("b", { text: isNum(rates[i]) ? `${rates[i].toFixed(0)}%` : "–", style: "color:var(--mint)" })),
+      return [el("div", {}, el("b", { text: isNum(rates[i]) ? `${rates[i].toFixed(0)}%` : "–", style: "color:var(--hi)" })),
         el("div", { class: "m", text: `attempt ${xs[i]} · ${e.tests_passed ?? "?"} of ${e.tests_total ?? "?"} checks passed` })];
     },
   });
@@ -1139,19 +1161,19 @@ function renderFeed(p) {
   const firstKey = acts.length ? acts[0].t + acts[0].text : null;
   if (firstKey !== feedSession || acts.length < feedCount) { feed.replaceChildren(); feedCount = 0; feedSession = firstKey; }
   const atBottom = feed.scrollHeight - feed.scrollTop - feed.clientHeight < 40;
-  const who = { text: "Nova", tool: "tool", runner: "system", raw: "output" };
+  const who = { text: "LoLo", tool: "tool", runner: "system", raw: "output" };
   const live = feedCount > 0;
   for (const a of acts.slice(feedCount)) {
     feed.append(el("div", { class: `ev ${a.kind}${live ? " new" : ""}` },
       el("span", { class: "t", text: shortTime(a.t) }), el("span", { class: "k", text: who[a.kind] || a.kind }), el("span", { class: "x", text: tidy(a.text) })));
   }
   feedCount = acts.length;
-  if (!acts.length && !feed.childElementCount) feed.append(el("div", { class: "empty", text: "Nothing yet. Nova's actions appear here while it works." }));
+  if (!acts.length && !feed.childElementCount) feed.append(el("div", { class: "empty", text: "Nothing yet. LoLo's actions appear here while it works." }));
   if (atBottom || !live) feed.scrollTop = feed.scrollHeight;
 }
 
 // ---------------- all attempts ----------------
-const COLS = [["id", "#", true], ["hypothesis", "What Nova tried", false], ["metric", "Score", true], ["decision", "Result", false], ["tests", "Checks", true], ["duration_seconds", "Time", true]];
+const COLS = [["id", "#", true], ["hypothesis", "What LoLo tried", false], ["metric", "Score", true], ["decision", "Result", false], ["tests", "Checks", true], ["duration_seconds", "Time", true]];
 function renderTable(p) {
   const q = $("fText").value.toLowerCase(), dec = $("fDec").value;
   let rows = p.experiments_log.filter(e => (!dec || e.decision === dec) && (!q || `${e.hypothesis} ${e.notes}`.toLowerCase().includes(q)));
@@ -1191,14 +1213,14 @@ function renderDetail(p) {
   renderAgent(p); renderReadouts(p); renderSheet(p); renderLearnt(p); renderMonitor(p); renderCharts(p); renderFeed(p); renderTable(p);
   if (!progDirty) $("progText").value = p.program_md;
   $("progSave").disabled = running; $("progText").readOnly = running;
-  if (!progDirty) $("progMsg").textContent = running ? "Locked while Nova is working. Pause first to edit." : "Nova reads these instructions (program.md) at the start of every session.";
+  if (!progDirty) $("progMsg").textContent = running ? "Locked while LoLo is working. Pause first to edit." : "LoLo reads these instructions (program.md) at the start of every session.";
 }
 $("dStart").addEventListener("click", async () => {
   try { await api(`/api/projects/${encodeURIComponent(selected)}/start`, { iterations: +$("dIters").value, model: $("dModel").value || null }); } catch (e) { alert(e.message); }
   refresh();
 });
 $("dStop").addEventListener("click", async () => {
-  if (!confirm("Pause this mission? The attempt in progress is undone and Nova starts a fresh one when you resume.")) return;
+  if (!confirm("Pause this mission? The attempt in progress is undone and LoLo starts a fresh one when you resume.")) return;
   await api(`/api/projects/${encodeURIComponent(selected)}/stop`, {});
   refresh();
 });
@@ -1236,7 +1258,7 @@ async function refresh() {
 // Landing: one prompt, a skip link, and a launch animation
 // =====================================================================
 const landing = { on: !location.hash, launching: false, speed: REDUCED ? 0 : 0.35, stars: [] };
-let landNova = null;
+let landLoLo = null;
 const lcv = $("lcv"), lctx = lcv.getContext("2d");
 function fitLanding() {
   lcv.width = innerWidth * Math.min(devicePixelRatio, 2); lcv.height = innerHeight * Math.min(devicePixelRatio, 2);
@@ -1252,7 +1274,7 @@ function drawLanding() {
     if (s.z <= 0.03) { s.x = (Math.random() - .5) * 2; s.y = (Math.random() - .5) * 2; s.z = 1; continue; }
     const x1 = w / 2 + s.x / s.z * k, y1 = h / 2 + s.y / s.z * k, x0 = w / 2 + s.x / pz * k, y0 = h / 2 + s.y / pz * k;
     const a = Math.min(1, (1 - s.z) * 1.4);
-    c.strokeStyle = landing.speed > 3 ? (s.x > 0 ? `rgba(111,220,191,${a})` : `rgba(255,180,138,${a})`) : `rgba(227,238,236,${a * 0.8})`;
+    c.strokeStyle = landing.speed > 3 ? (s.x > 0 ? `rgba(229,72,77,${a})` : `rgba(255,255,255,${a})`) : `rgba(240,240,242,${a * 0.75})`;
     c.lineWidth = (1 - s.z) * 3 + 0.6;
     c.beginPath(); c.moveTo(x0, y0); c.lineTo(x1 + 0.1, y1 + 0.1); c.stroke();
   }
@@ -1266,14 +1288,14 @@ function landingLoop() {
 function closeLanding() {
   $("landing").classList.add("gone");
   document.documentElement.classList.remove("locked");
-  setTimeout(() => { landing.on = false; $("landing").hidden = true; landNova?.dispose(); landNova = null; }, 750);
+  setTimeout(() => { landing.on = false; $("landing").hidden = true; landLoLo?.dispose(); landLoLo = null; }, 750);
 }
 async function launchFromLanding(goal) {
   landing.launching = true;
   $("landing").classList.add("launching");
-  landNova?.setStage("boot");
+  landLoLo?.setStage("boot");
   const lines = $("llines"), prog = $("lprog");
-  const steps = ["Got it!", "Reading your idea…", "Deciding how to measure success…", "Waking up Nova…", "Here we go!"];
+  const steps = ["Got it!", "Reading your idea…", "Deciding how to measure success…", "Waking up LoLo…", "Here we go!"];
   const create = api("/api/projects", { goal, iterations: 10, budget: 120 });   // starts the run right away
   let err = null;
   create.catch(e => { err = e; });
@@ -1282,7 +1304,7 @@ async function launchFromLanding(goal) {
     lines.append(el("div", { text: steps[i] }));
     if (lines.children.length > 3) lines.firstChild.remove();
     prog.style.width = `${Math.round((i + 1) / steps.length * 100)}%`;
-    if (i === steps.length - 1) landNova?.setStage("celebrate");
+    if (i === steps.length - 1) landLoLo?.setStage("celebrate");
     await sleep(REDUCED ? 150 : 850);
   }
   let id = null;
@@ -1290,7 +1312,7 @@ async function launchFromLanding(goal) {
   if (err) {   // back to the form, keeping what they typed
     landing.launching = false; landing.speed = REDUCED ? 0 : 0.35;
     $("landing").classList.remove("launching"); lines.replaceChildren(); prog.style.width = "0";
-    landNova?.setStage("wave");
+    landLoLo?.setStage("wave");
     $("lerr").textContent = err.message;
     return;
   }
@@ -1304,11 +1326,10 @@ $("lform").addEventListener("submit", e => {
   if (goal.length < 10) { $("lerr").textContent = "Tell me a little more: a sentence about what you'd like."; return; }
   launchFromLanding(goal);
 });
-$("lgoal").addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); $("lform").requestSubmit(); } });
 $("lskip").addEventListener("click", closeLanding);
 if (landing.on) {
   document.documentElement.classList.add("locked");
-  landNova = new Nova3D($("lnovaBox"), { follow: true, stage: "wave", distance: 7.2, lookY: 0.55 });
+  landLoLo = new Nova3D($("lnovaBox"), { follow: true, stage: "wave", distance: 7.2, lookY: 0.55 });
   fitLanding(); addEventListener("resize", fitLanding);
   requestAnimationFrame(landingLoop);
   setTimeout(() => $("lgoal").focus(), 50);
