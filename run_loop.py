@@ -58,6 +58,23 @@ def create_project(root, goal, budget=120):
     (root / "program.md").write_text(text, encoding="utf-8")
 
 
+def tool_kind(name, detail):
+    """Group raw tool calls into the handful of abilities shown in the UI."""
+    if name == "Read":
+        return "read"
+    if name in ("Edit", "Write", "NotebookEdit"):
+        return "write"
+    if name in ("Glob", "Grep"):
+        return "search"
+    if name == "Bash":
+        if re.match(r"\s*git\b", detail):
+            return "git"
+        if re.match(r"\s*python3?\b", detail):
+            return "python"
+        return "shell"
+    return "other"
+
+
 def kill_tree(pid):
     if os.name == "nt":
         subprocess.run(["taskkill", "/T", "/F", "/PID", str(pid)], capture_output=True)
@@ -175,6 +192,14 @@ class Runner:
                               or inp.get("description") or "")
                     detail = re.sub(r'^cd\s+("[^"]*"|\S+)\s*&&\s*', "", str(detail))  # drop cd-into-repo noise
                     self.activity("tool", f"{block.get('name')}: {str(detail)[:200]}")
+                    kind = tool_kind(block.get("name"), detail)
+                    uses = self.state.setdefault("tool_uses", {})
+                    uses[kind] = uses.get(kind, 0) + 1
+                    if sum(uses.values()) % 10 == 0:
+                        self.save_state()  # keep the UI's ability levels roughly live
+        elif ev.get("type") == "system" and ev.get("subtype") == "init":
+            # what the agent is actually running with this session
+            self.save_state(model_used=ev.get("model"), skills=ev.get("skills") or [], tools=ev.get("tools") or [])
         elif ev.get("type") == "result":
             return ev
         return None

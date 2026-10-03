@@ -6,15 +6,15 @@
 <title>Loop Agent</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Jersey+10&family=JetBrains+Mono:wght@400;500&family=Silkscreen:wght@400;700&family=VT323&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Jersey+10&family=JetBrains+Mono:wght@400;500&family=Pixelify+Sans:wght@400;500;600&family=VT323&display=swap" rel="stylesheet">
 <style>
 :root {
   color-scheme: dark;
-  --bg: #07061a; --panel: #0d0b26; --panel-2: #141135; --rule: #1f1b4d; --rule-2: #2e2870;
-  --ink: #ebe9ff; --ink-2: #a5a1de; --muted: #5f5aa3;
-  --cyan: #2df6ff; --cyan-dim: #158a9e; --cyan-ink: #031418;
-  --pink: #ff3d9a; --red: #ff5a4f;
-  --pix: "Silkscreen", "Consolas", monospace;
+  --bg: #17152f; --panel: #1e1c3d; --panel-2: #25224b; --rule: #2e2b5a; --rule-2: #3e3a76;
+  --ink: #dddbf2; --ink-2: #b3afd8; --muted: #8b87bd;
+  --cyan: #74d9e4; --cyan-dim: #3f8f9b; --cyan-ink: #10262a;
+  --pink: #ef80b2; --red: #ef857a;
+  --pix: "Pixelify Sans", "Segoe UI", sans-serif;
   --num: "Jersey 10", "Impact", sans-serif;
   --term: "VT323", "Consolas", monospace;
   --mono: "JetBrains Mono", "Cascadia Mono", Consolas, monospace;
@@ -56,7 +56,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .btn:hover:not(:disabled) { border-color: var(--ink-2); }
 .btn:active:not(:disabled) { transform: translateY(1px); }
 .btn.go { background: var(--cyan); border-color: var(--cyan); color: var(--cyan-ink); box-shadow: inset 0 -3px 0 var(--cyan-dim); }
-.btn.go:hover:not(:disabled) { background: #8ffaff; border-color: #8ffaff; }
+.btn.go:hover:not(:disabled) { background: #93e4ec; border-color: #93e4ec; }
 .btn.ghost { border-color: transparent; background: none; color: var(--ink-2); }
 .btn.ghost:hover:not(:disabled) { color: var(--ink); border-color: var(--rule-2); }
 .btn:disabled { opacity: .35; cursor: default; }
@@ -70,10 +70,37 @@ button, input, select, textarea { font: inherit; color: inherit; }
 
 /* ---------- mission screen ---------- */
 .board { display: grid; grid-template-columns: minmax(360px, 34%) 1fr; gap: 8px; min-height: 0; }
-.leftcol { display: grid; grid-template-rows: 1fr auto auto; gap: 8px; min-height: 0; }
+.leftcol { display: grid; grid-template-rows: minmax(210px, 1fr) minmax(190px, 1.05fr) auto auto; gap: 8px; min-height: 0; }
+.novacard { display: grid; grid-template-columns: 42% 1fr; gap: 8px; min-height: 0; }
+.sheet { display: flex; flex-direction: column; gap: 10px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--rule-2) transparent; }
+.sheet .model { display: flex; align-items: center; gap: 8px; font: 500 13px var(--pix); color: var(--ink); }
+.sheet .model i { width: 8px; height: 8px; background: var(--cyan); display: inline-block; flex: none; }
+.sheet .meta { font: 12px var(--mono); color: var(--muted); margin-top: -6px; }
+.abil { display: grid; grid-template-columns: 58px 1fr 38px; gap: 3px 8px; align-items: center; font: 12px var(--pix); color: var(--ink-2); }
+.abil .bar { display: flex; gap: 2px; height: 7px; }
+.abil .bar i { flex: 1; background: var(--rule-2); }
+.abil .bar i.on { background: var(--cyan); }
+.abil .lv { text-align: right; color: var(--muted); font: 12px var(--mono); }
+.sheet .model span { font: 500 13px var(--mono); }
+.chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.chips span { font: 12px var(--pix); color: var(--ink-2); border: 2px solid var(--rule-2); padding: 1px 6px; }
+.monitor { padding: 0; overflow: hidden; background: #fff; }
+.monitor iframe { position: absolute; left: 0; top: 0; width: 200%; height: 200%; transform: scale(.5); transform-origin: 0 0; border: 0; pointer-events: none; background: #fff; }
+.monitor .bar { position: absolute; z-index: 2; left: 0; right: 0; bottom: 0; display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; background: var(--panel); border-top: 2px solid var(--rule-2); font: 12px var(--pix); color: var(--ink-2); }
+.monitor.none { background: var(--panel); display: grid; place-items: center; }
+.monitor.none .msg { font: 13px var(--pix); color: var(--muted); text-align: center; padding: 20px; }
+.learnt { display: flex; flex-direction: column; gap: 8px; overflow: auto; }
+.learnt ul { margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.learnt li { list-style: none; display: grid; grid-template-columns: 34px 1fr; gap: 8px; font-size: 12.5px; color: var(--ink-2); }
+.learnt li b { font: 400 22px/1 var(--num); color: var(--muted); }
+.learnt li.kept b { color: var(--cyan); }
+.learnt li .what { color: var(--ink); }
+dialog.big { width: 92vw; height: 88vh; max-width: none; }
+dialog.big iframe { width: 100%; height: calc(100% - 46px); border: 0; background: #fff; display: block; }
+dialog.big .bar { display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; font: 13px var(--pix); }
 .rightcol { display: grid; grid-template-rows: auto 1fr minmax(140px, 28%); gap: 8px; min-height: 0; }
 
-.viewport { padding: 0; overflow: hidden; background: #050417; }
+.viewport { padding: 0; overflow: hidden; background: #110f28; }
 #scene { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); image-rendering: pixelated; }
 .hud { position: absolute; z-index: 2; top: 12px; left: 14px; right: 14px; display: flex; justify-content: space-between; font: 400 10px var(--pix); color: var(--muted); text-transform: uppercase; }
 .hud .on { color: var(--cyan); }
@@ -167,11 +194,26 @@ dialog textarea { min-height: 140px; resize: vertical; font: 20px/1.2 var(--term
 .grid3 { display: grid; grid-template-columns: 1fr 1fr 1.6fr; gap: 12px; }
 .err { color: var(--red); font: 400 10px var(--pix); min-height: 1em; }
 
+/* readability: sentence case, real sizes */
+.cap, .btn, .status, .lbl, .legend, .kv dt, .quest div, .tabs button, th, .hint, .dec, .empty, dialog label, .hud, .mi, .picker .nm, .ev .k, .tip .m, .err, .dlgwrap .tag, .dlgwrap .stg, .mark {
+  text-transform: none; letter-spacing: .01em; font-family: var(--pix); }
+.cap, .legend, .hint, .dec, .tip .m, .ev .k, th, dialog label, .hud, .err, .lbl, .status, .dlgwrap .stg { font-size: 12.5px; font-weight: 500; }
+.btn, .tabs button, .quest div, .mi, .picker .nm, .dlgwrap .tag { font-size: 13px; font-weight: 500; }
+.mark { font-size: 16px; font-weight: 600; }
+.cap { color: var(--ink-2); }
+.chart text { fill: var(--ink-2); }
+.ev { font-size: 18px; }
+.ev .x { color: var(--ink); }
+.ev.tool .x { color: var(--ink-2); }
+
+/* Pixelify's small digits are ambiguous (5 vs 8): numbers use the mono face */
+.hud, .tip .m, #testsNow { font-family: var(--mono) !important; font-size: 12px; }
+
 @media (max-width: 1100px), (max-height: 600px) {
   html { scroll-snap-type: none; }
   .screen { height: auto; min-height: 0; }
   .board, .recgrid { grid-template-columns: 1fr; }
-  .leftcol { grid-template-rows: 340px auto auto; }
+  .leftcol { grid-template-rows: 300px 320px auto auto; }
   .rightcol { grid-template-rows: auto 300px auto; }
   .readouts { grid-template-columns: 1fr 1fr; } .ro.hero { grid-column: 1 / -1; }
   .bottom { grid-template-columns: 1fr; } .bottom .chartwin { height: 200px; }
@@ -200,6 +242,13 @@ dialog textarea { min-height: 140px; resize: vertical; font: 20px/1.2 var(--term
     </button>
     <div id="mlist" popover></div>
     <div class="spacer"></div>
+    <span class="lbl">model</span>
+    <select class="field" id="dModel" aria-label="Model for the next run" style="height:32px;padding:0 8px;font:13px var(--pix)">
+      <option value="">Claude Code default</option>
+      <option>claude-opus-5-5</option>
+      <option>claude-sonnet-5-5</option>
+      <option>claude-haiku-4-5-20251001</option>
+    </select>
     <span class="lbl">runs</span><input class="num-in" type="number" id="dIters" value="10" min="1" aria-label="Experiments to run">
     <button class="btn go" id="dStart">Resume</button>
     <button class="btn" id="dStop">Stop</button>
@@ -208,11 +257,22 @@ dialog textarea { min-height: 140px; resize: vertical; font: 20px/1.2 var(--term
 
   <div class="board" id="board">
     <div class="leftcol">
-      <div class="win viewport" id="viewport">
-        <canvas id="scene" aria-label="Nova, the agent" role="img"></canvas>
-        <div class="hud"><span id="live">standby</span><span id="hudTime"></span></div>
-        <div class="hiscore" id="hiscore"><span id="hiTitle">New hi-score!</span><small id="hiSub"></small></div>
+      <div class="novacard">
+        <div class="win viewport" id="viewport">
+          <canvas id="scene" aria-label="Nova, the agent" role="img"></canvas>
+          <div class="hud"><span id="live">standby</span><span id="hudTime"></span></div>
+          <div class="hiscore" id="hiscore"><span id="hiTitle">New hi-score!</span><small id="hiSub"></small></div>
+        </div>
+        <div class="win sheet" id="sheet">
+          <div class="cap">Nova</div>
+          <div class="model" id="sheetModel"><i></i><span>model unknown</span></div>
+          <div class="meta" id="sheetMeta"></div>
+          <div class="abil" id="abil"></div>
+          <div class="cap" style="margin-top:2px">Claude Code skills</div>
+          <div class="chips" id="chips"></div>
+        </div>
       </div>
+      <div class="win monitor none" id="monitor"><div class="msg">Nova's own dashboard appears here once the baseline is built.</div></div>
       <div class="dlgwrap">
         <span class="tag">Nova</span><span class="stg" id="dlgStage">resting</span>
         <div class="win dlg"><div class="line" id="tty" aria-live="polite"></div></div>
@@ -236,9 +296,9 @@ dialog textarea { min-height: 140px; resize: vertical; font: 20px/1.2 var(--term
           <div class="head"><div class="cap">tests passing</div><div class="cap" id="testsNow" style="color:var(--ink-2)"></div></div>
           <div class="chart" id="pChart"></div>
         </div>
-        <div class="win">
-          <div class="cap">this run</div>
-          <dl class="kv" id="runKv"></dl>
+        <div class="win learnt">
+          <div class="cap">Recently learnt</div>
+          <ul id="learnt"></ul>
         </div>
       </div>
     </div>
@@ -247,7 +307,7 @@ dialog textarea { min-height: 140px; resize: vertical; font: 20px/1.2 var(--term
 
 <!-- ======================= SCREEN 2: RECORDS ======================= -->
 <section class="screen records" id="s2">
-  <div class="sechead"><div class="cap">records</div><div class="spacer"></div><a class="btn ghost" id="dDash" target="_blank" rel="noopener">Agent's own dashboard ↗</a></div>
+  <div class="sechead"><div class="cap">records</div><div class="spacer"></div></div>
   <div class="recgrid">
     <div class="win panel">
       <div class="cap">comms log</div>
@@ -275,6 +335,11 @@ dialog textarea { min-height: 140px; resize: vertical; font: 20px/1.2 var(--term
     </div>
   </div>
 </section>
+
+<dialog class="big" id="dashDlg">
+  <div class="bar"><span>Nova's own dashboard</span><button class="btn ghost" id="dashClose">Close</button></div>
+  <iframe id="dashBig" title="Agent dashboard"></iframe>
+</dialog>
 
 <!-- ======================= NEW MISSION ======================= -->
 <dialog id="newDlg">
@@ -536,7 +601,7 @@ const cv = $("scene"), cx = cv.getContext("2d");
 function fitScene() {
   const vp = $("viewport"), cw = vp.clientWidth, ch = vp.clientHeight;
   if (!cw || !ch) return;
-  scene.px = Math.max(2, Math.min(5, Math.floor((ch * 0.22) / SPRITE_H)));   // Nova ≈ a fifth of the viewport
+  scene.px = Math.max(2, Math.min(4, Math.floor((ch * 0.3) / SPRITE_H)));   // Nova ≈ a fifth of the viewport
   scene.w = Math.ceil(cw / scene.px); scene.h = Math.ceil(ch / scene.px);
   cv.width = scene.w; cv.height = scene.h;
   cv.style.width = `${scene.w * scene.px}px`; cv.style.height = `${scene.h * scene.px}px`;
@@ -732,17 +797,52 @@ function renderReadouts(p) {
   tween($("roKeep"), exps.length ? (kept / exps.length) * 100 : null, v => isNum(v) ? `${Math.round(v)}%` : "–");
   $("roKeepSub").textContent = exps.length ? `${kept} of ${exps.length} kept` : "";
 
-  const s = p.state || {}, sess = s.sessions || [];
-  const planned = s.planned || 0, done = s.done || 0;
   const durs = exps.map(e => e.duration_seconds).filter(isNum);
-  const segs = Math.min(planned, 20), on = planned ? Math.round(done / planned * segs) : 0;
-  $("runKv").replaceChildren(
-    el("div", { class: "segbar" }, ...Array.from({ length: segs || 1 }, (_, i) => el("i", { class: i < on ? "on" : "" }))),
-    el("dt", { text: "sessions" }), el("dd", { text: planned ? `${done}/${planned}` : "–" }),
-    el("dt", { text: "agent time" }), el("dd", { text: fmtDur(sess.reduce((a, x) => a + (x.seconds || 0), 0) || null) }),
-    el("dt", { text: "avg eval" }), el("dd", { text: fmtDur(durs.length ? durs.reduce((a, b) => a + b, 0) / durs.length : null) }),
-    el("dt", { text: "cost" }), el("dd", { text: isNum(p.cost_usd) ? `$${p.cost_usd.toFixed(2)}` : "–" }));
+  $("roExpSub").textContent = `${disc} discarded${durs.length ? ` · avg eval ${fmtDur(durs.reduce((a, b) => a + b, 0) / durs.length)}` : ""}`;
 }
+
+// ---------------- Nova's sheet: model, abilities, skills ----------------
+const ABILITIES = [["read", "Read"], ["write", "Code"], ["search", "Search"], ["python", "Python"], ["git", "Git"], ["shell", "Shell"]];
+function renderSheet(p) {
+  const s = p.state || {}, sess = s.sessions || [], uses = s.tool_uses || {};
+  const model = s.model_used || s.model;
+  $("sheetModel").lastChild.textContent = model || "Claude Code default model";
+  $("sheetModel").title = s.model_used ? "Model reported by the latest session" : "Model requested for this run";
+  const planned = s.planned || 0, done = s.done || 0;
+  const time = sess.reduce((a, x) => a + (x.seconds || 0), 0);
+  $("sheetMeta").textContent = [planned ? `session ${done}/${planned}` : null, time ? fmtDur(time) : null,
+    isNum(p.cost_usd) ? `$${p.cost_usd.toFixed(2)}` : null].filter(Boolean).join(" · ") || "no sessions yet";
+  $("abil").replaceChildren(...ABILITIES.flatMap(([k, label]) => {
+    const n = uses[k] || 0, lv = Math.min(10, Math.floor(Math.log2(n + 1)));   // a level per doubling of use
+    return [el("span", { text: label }),
+      el("span", { class: "bar", title: `${n} uses` }, ...Array.from({ length: 10 }, (_, i) => el("i", { class: i < lv ? "on" : "" }))),
+      el("span", { class: "lv", text: `Lv ${lv}` })];
+  }));
+  const skills = s.skills || [];
+  $("chips").replaceChildren(...(skills.length ? skills.slice(0, 9).map(k => el("span", { text: k })) : [el("span", { text: "known after the first session" })]),
+    ...(skills.length > 9 ? [el("span", { text: `+${skills.length - 9}`, title: skills.slice(9).join(", ") })] : []));
+}
+function renderLearnt(p) {
+  const recent = p.experiments_log.slice(-4).reverse();
+  const short = (t, n = 150) => { t = (t || "").replace(/\s+/g, " ").trim(); return t.length > n ? t.slice(0, n) + "…" : t; };
+  $("learnt").replaceChildren(...(recent.length ? recent.map(e => el("li", { class: e.decision === "kept" ? "kept" : "" },
+    el("b", { text: `#${e.id}` }),
+    el("div", {}, el("div", { class: "what", text: short(e.hypothesis, 110) }),
+      el("div", { text: (e.decision === "kept" ? "Kept. " : "Dropped. ") + short(e.notes) }))))
+    : [el("li", {}, el("b", { text: "–" }), el("div", { text: "Lessons from each experiment show up here." }))]));
+}
+let monitorSrc;
+function renderMonitor(p) {
+  const box = $("monitor"), src = p.has_dashboard ? `/p/${encodeURIComponent(p.id)}/dashboard.html` : null;
+  if (src === monitorSrc) return;
+  monitorSrc = src;
+  if (!src) { box.className = "win monitor none"; box.replaceChildren(el("div", { class: "msg", text: "Nova's own dashboard appears here once the baseline is built." })); return; }
+  box.className = "win monitor";
+  box.replaceChildren(el("iframe", { src, title: "Nova's dashboard (preview)", tabindex: -1 }),
+    el("div", { class: "bar" }, el("span", { text: "Nova's own dashboard" }),
+      el("button", { class: "btn ghost", style: "height:26px", text: "Expand", onclick: () => { $("dashBig").src = src; $("dashDlg").showModal(); } })));
+}
+$("dashClose").addEventListener("click", () => $("dashDlg").close());
 
 // ---------------- charts ----------------
 function niceTicks(lo, hi, n = 4) {
@@ -924,16 +1024,14 @@ function renderDetail(p) {
   const running = p.status === "running";
   $("dStart").disabled = running; $("dStop").disabled = !running;
   $("dStart").textContent = p.experiments ? "Resume" : "Launch";
-  $("dDash").hidden = !p.has_dashboard;
-  $("dDash").href = `/p/${encodeURIComponent(p.id)}/dashboard.html`;
   checkNewResults(p);
-  renderAgent(p); renderReadouts(p); renderCharts(p); renderFeed(p); renderTable(p);
+  renderAgent(p); renderReadouts(p); renderSheet(p); renderLearnt(p); renderMonitor(p); renderCharts(p); renderFeed(p); renderTable(p);
   if (!progDirty) $("progText").value = p.program_md;
   $("progSave").disabled = running; $("progText").readOnly = running;
   if (!progDirty) $("progMsg").textContent = running ? "locked while a run is active" : "program.md · read at the start of every session";
 }
 $("dStart").addEventListener("click", async () => {
-  try { await api(`/api/projects/${encodeURIComponent(selected)}/start`, { iterations: +$("dIters").value }); } catch (e) { alert(e.message); }
+  try { await api(`/api/projects/${encodeURIComponent(selected)}/start`, { iterations: +$("dIters").value, model: $("dModel").value || null }); } catch (e) { alert(e.message); }
   refresh();
 });
 $("dStop").addEventListener("click", async () => {
