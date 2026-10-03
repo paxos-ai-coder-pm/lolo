@@ -161,6 +161,12 @@ def stop_runner(pid, d):
     target = p.pid if p is not None else state.get("pid")
     if target:
         kill_tree(target)  # also kills the agent session it spawned
+    msg = f"stopped from the UI (killed runner pid {target})"
+    with open(d / "runner.log", "a", encoding="utf-8") as f:
+        f.write(f"[{time.strftime('%H:%M:%S')}] {msg}\n")
+    with open(d / "activity.jsonl", "a", encoding="utf-8") as f:
+        f.write(json.dumps({"t": time.strftime("%Y-%m-%dT%H:%M:%S%z"), "session": state.get("current"),
+                            "kind": "runner", "text": msg}) + "\n")
     if state:
         state["status"] = "stopped"
         state["current"] = None
