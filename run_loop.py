@@ -201,7 +201,13 @@ class Runner:
         elif ev.get("type") == "system" and ev.get("subtype") == "init":
             # what the agent is actually running with this session
             self.save_state(model_used=ev.get("model"), skills=ev.get("skills") or [], tools=ev.get("tools") or [])
+        elif ev.get("type") == "rate_limit_event":
+            info = ev.get("rate_limit_info") or {}
+            if info.get("status") == "rejected":
+                self.limit_reset = info.get("resetsAt") or time.time() + 900
         elif ev.get("type") == "result":
+            if ev.get("is_error") and re.search(r"(session|usage) limit", str(ev.get("result", "")), re.I):
+                self.limit_reset = self.limit_reset or time.time() + 900  # no reset time given: retry in 15 min
             return ev
         return None
 
@@ -209,6 +215,7 @@ class Runner:
         self.sessions.mkdir(exist_ok=True)
         start = time.time()
         result = None
+        self.limit_reset = None
         popen_kw = {"start_new_session": True} if os.name != "nt" else {}
         proc = subprocess.Popen(cmd, cwd=self.root, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                 stdin=subprocess.DEVNULL, text=True, encoding="utf-8",
@@ -236,9 +243,21 @@ class Runner:
             "exit": proc.returncode,
             "cost_usd": (result or {}).get("total_cost_usd"),
             "turns": (result or {}).get("num_turns"),
+            "limit_reset": self.limit_reset,
         }
         self.say(f"session {label} finished in {info['seconds']:.0f}s (exit {proc.returncode})")
         return info
+
+    def wait_for_reset(self, reset_ts):
+        """Hitting the usage limit is not a failure: sleep until it resets, then retry the same attempt."""
+        resume = max(float(reset_ts) + 60, time.time() + 60)
+        when = datetime.fromtimestamp(resume).astimezone()
+        self.save_state(status="waiting", current=None, resume_at=when.isoformat(timespec="seconds"))
+        self.say(f"usage limit reached; waiting until {when:%H:%M} to continue")
+        while time.time() < resume:
+            time.sleep(min(60, max(1, resume - time.time())))
+        self.save_state(status="running", resume_at=None)
+        self.say("usage limit has reset; continuing")
 
     # ---- main loop ---------------------------------------------------------
 
@@ -265,7 +284,8 @@ class Runner:
             self.save_state(status="running", pid=os.getpid(), planned=planned, done=0,
                             current=None, started_at=now(), model=args.model)
         failures = 0
-        for i in range(planned):
+        i = 0
+        while i < planned:
             before = self.read_log_lines()
             if before:
                 next_id = len(before) + 1
@@ -275,6 +295,7 @@ class Runner:
             cmd = [claude, "-p", prompt, *flags]  # prompt first: --allowedTools is variadic
             if args.dry_run:
                 print(f"{label}: " + " ".join(f'"{c}"' if " " in c else c for c in cmd))
+                i += 1
                 continue
 
             self.save_state(current=label, phase=phase, done=i, session_started_at=now())
@@ -283,6 +304,9 @@ class Runner:
             info = self.run_session(cmd, label, args.session_timeout * (2 if phase == 1 else 1))
             entries = self.enforce_log(before)
             self.enforce_clean_tree()
+            if info["limit_reset"] and not entries:
+                self.wait_for_reset(info["limit_reset"])
+                continue   # same attempt again; not counted as a failure
 
             self.state["sessions"].append(info)
             costs = [s["cost_usd"] for s in self.state["sessions"] if s.get("cost_usd")]
@@ -299,6 +323,7 @@ class Runner:
                 self.say("stopping: baseline was not logged; check the session transcript")
                 self.save_state(status="error")
                 return 1
+            i += 1
         if not args.dry_run:
             self.save_state(status="finished", current=None)
             self.say("run finished")

@@ -91,12 +91,12 @@ def status_of(pid, d):
         p = procs.get(pid)
     if p is not None and p.poll() is None:
         running = True
-    elif state.get("status") == "running" and state.get("pid"):
+    elif state.get("status") in ("running", "waiting") and state.get("pid"):
         running = pid_alive(state["pid"])  # started from the CLI or before a server restart
     else:
         running = False
     status = state.get("status") or ("idle" if (d / "experiments.jsonl").exists() else "new")
-    if status == "running" and not running:
+    if status in ("running", "waiting") and not running:
         status = "stopped"
     return status, state
 

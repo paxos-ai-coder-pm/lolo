@@ -56,6 +56,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .status i { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); display: inline-block; }
 .status.running { color: var(--accent); } .status.running i { background: var(--accent); animation: pulse 1.6s ease-in-out infinite; }
 .status.finished { color: var(--hi); } .status.finished i { background: var(--hi); }
+.status.waiting { color: var(--ink-2); } .status.waiting i { background: var(--ink-2); animation: pulse 2.4s ease-in-out infinite; }
 .status.error { color: var(--red); } .status.error i { background: var(--red); }
 @keyframes pulse { 50% { opacity: .35; } }
 .spacer { flex: 1; }
@@ -458,7 +459,7 @@ function fmt(v) {
 const fmtDur = s => !isNum(s) ? "–" : s < 60 ? `${s.toFixed(s < 10 ? 1 : 0)}s` : s < 3600 ? `${Math.floor(s / 60)}m ${String(Math.round(s % 60)).padStart(2, "0")}s` : `${(s / 3600).toFixed(1)}h`;
 const shortTime = t => t ? new Date(t).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false }) : "";
 const expLabel = c => c ? c.replace(/^exp_0*/, "#").replace("_baseline", "") : "";
-const STATUS_WORD = { running: "working", stopped: "paused", finished: "done", idle: "idle", error: "needs help", new: "new" };
+const STATUS_WORD = { waiting: "waiting", running: "working", stopped: "paused", finished: "done", idle: "idle", error: "needs help", new: "new" };
 const statusEl = s => el("span", { class: `status ${s}` }, el("i"), STATUS_WORD[s] || s);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
@@ -913,6 +914,7 @@ function lineFor(p, inf) {
     default:
       if (p.status === "finished") return `All done for now! Best ${p.metric.name || "score"}: ${fmt(p.best)}. Give me more attempts any time.`;
       if (p.status === "stopped") return "Paused. Press Resume and I'll pick up where I left off.";
+      if (p.status === "waiting") return "I've used up my time for now. I'll wake up and continue as soon as the usage limit resets.";
       return p.experiments ? "Zzz… press Resume to wake me up." : "Ready when you are.";
   }
 }
@@ -966,7 +968,9 @@ function renderAgent(p) {
   $("speechStage").textContent = STAGE_NAMES[stage] || stage;
   const idle = $("idleMsg");
   idle.hidden = running || !!POSES[forced];
-  if (!running) idle.replaceChildren(
+  const until = p.status === "waiting" && s.resume_at ? new Date(s.resume_at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) : null;
+  if (p.status === "waiting") idle.replaceChildren("Taking a break", el("small", { text: `The Claude usage limit was reached. LoLo picks up again by itself${until ? ` at ${until}` : " soon"}.` }));
+  else if (!running) idle.replaceChildren(
     p.status === "error" ? "LoLo needs help" : p.status === "finished" ? "Mission complete" : "No mission in progress",
     el("small", { text: p.status === "error" ? "See Live activity below, then press Resume." : p.status === "finished" ? "LoLo is resting. Press Resume for more attempts." : "LoLo is napping. Press Resume to wake it up." }));
   typeOut(now < noticeUntil ? notice : lineFor(p, inf));
@@ -1206,8 +1210,8 @@ document.querySelectorAll(".tabs button").forEach(b => b.addEventListener("click
 
 // ---------------- detail ----------------
 function renderDetail(p) {
-  const running = p.status === "running";
-  $("dStart").disabled = running; $("dStop").disabled = !running;
+  const running = p.status === "running", active = running || p.status === "waiting";
+  $("dStart").disabled = active; $("dStop").disabled = !active;
   $("dStart").textContent = p.experiments ? "Resume" : "Start";
   checkNewResults(p);
   renderAgent(p); renderReadouts(p); renderSheet(p); renderLearnt(p); renderMonitor(p); renderCharts(p); renderFeed(p); renderTable(p);
