@@ -208,6 +208,7 @@ dialog textarea { min-height: 140px; resize: vertical; font: 20px/1.2 var(--term
 
 /* Pixelify's small digits are ambiguous (5 vs 8): numbers use the mono face */
 .hud, .tip .m, #testsNow { font-family: var(--mono) !important; font-size: 12px; }
+dialog input, dialog select, .num-in { font-family: var(--mono) !important; font-size: 13px; }
 
 @media (max-width: 1100px), (max-height: 600px) {
   html { scroll-snap-type: none; }
@@ -1055,6 +1056,7 @@ async function refresh() {
     projects = await api("/api/projects");
     if ((!selected || !projects.some(p => p.id === selected)) && projects.length) selected = projects[0].id;
     renderPicker();
+    if (!projects.length) { $("dStart").disabled = true; $("dStop").disabled = true; }
     if (!projects.length && firstLoad) openNew();
     firstLoad = false;
     if (selected && projects.some(p => p.id === selected)) {
