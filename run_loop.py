@@ -35,7 +35,7 @@ ALLOWED_TOOLS = [
     "Bash(ls *)", "Bash(cat *)", "Bash(head *)", "Bash(tail *)", "Bash(wc *)", "Bash(mkdir *)",
 ]
 # Runner-owned files: ignored by git so keep/revert never touches them.
-IGNORED = ["experiments.jsonl", ".builder/", "sessions/", "activity.jsonl", "runner_state.json", "runner.log", "runner.out", "__pycache__/"]
+IGNORED = ["experiments.jsonl", "user_feedback.jsonl", ".builder/", "sessions/", "activity.jsonl", "runner_state.json", "runner.log", "runner.out", "__pycache__/"]
 
 PHASE1_PROMPT = (
     "Read program.md and carry out session 1 exactly as it describes: build the first complete version, "
@@ -44,6 +44,16 @@ PHASE1_PROMPT = (
 PHASE2_PROMPT = (
     "Read program.md and carry out exactly one improvement session as it describes. "
     "This is attempt id {next_id}. When it is logged in experiments.jsonl, stop."
+)
+
+
+FEEDBACK_PROMPT = (
+    "\n\nThe user sent you feedback from the dashboard (oldest first):\n{items}\n"
+    "This feedback is your top priority for this session. Follow the program's rules for user input: classify it and "
+    "record it (feedback.jsonl, plus a lesson, profile, or avoid entry in the brain where it applies). If it is a complaint, "
+    "own it in one plain sentence in your update. Then make the change that best addresses it. A change that addresses this "
+    "feedback, with all checks passing and new checks covering it, counts as better even if the score does not change. "
+    "If it is too big for one session, do the most important part, keep it, and say what remains."
 )
 
 
@@ -120,6 +130,20 @@ class Runner:
         with open(self.root / "runner.log", "a", encoding="utf-8") as f:
             f.write(f"[{datetime.now():%H:%M:%S}] {msg}\n")
         self.activity("runner", msg)
+
+    def new_feedback(self):
+        """User messages sent from the dashboard that no finished session has acted on yet."""
+        path = self.root / "user_feedback.jsonl"
+        if not path.exists():
+            return [], 0
+        msgs = []
+        for line in path.read_text(encoding="utf-8").splitlines():
+            try:
+                msgs.append(json.loads(line))
+            except json.JSONDecodeError:
+                pass
+        seen = self.state.get("feedback_seen", 0)
+        return [m.get("text", "") for m in msgs[seen:] if m.get("text")], len(msgs)
 
     def read_log_lines(self):
         if not self.log_path.exists():
@@ -292,6 +316,9 @@ class Runner:
                 label, prompt, phase = f"exp_{next_id:03d}", PHASE2_PROMPT.format(next_id=next_id), 2
             else:
                 label, prompt, phase = "exp_001_baseline", PHASE1_PROMPT, 1
+            feedback, feedback_upto = self.new_feedback()
+            if feedback:
+                prompt += FEEDBACK_PROMPT.format(items="\n".join(f"- {json.dumps(t, ensure_ascii=False)}" for t in feedback))
             cmd = [claude, "-p", prompt, *flags]  # prompt first: --allowedTools is variadic
             if args.dry_run:
                 print(f"{label}: " + " ".join(f'"{c}"' if " " in c else c for c in cmd))
@@ -300,6 +327,8 @@ class Runner:
 
             self.save_state(current=label, phase=phase, done=i, session_started_at=now())
             self.say(f"starting {label} ({i + 1}/{planned}, phase {phase})")
+            if feedback:
+                self.say(f"working on your feedback ({len(feedback)} message{'s' if len(feedback) > 1 else ''})")
             # session 1 runs the whole understand-to-deliver process, so it gets twice the time
             info = self.run_session(cmd, label, args.session_timeout * (2 if phase == 1 else 1))
             entries = self.enforce_log(before)
@@ -314,6 +343,8 @@ class Runner:
             for e in entries:
                 self.say(f"{e.get('decision')}: metric={e.get('metric')} best={e.get('best_so_far')} "
                          f"tests={e.get('tests_passed')}/{e.get('tests_total')} - {e.get('hypothesis')}")
+            if entries and feedback:
+                self.save_state(feedback_seen=feedback_upto)   # acted on; don't repeat it next session
             failures = 0 if entries else failures + 1
             if failures >= args.max_failures:
                 self.say(f"stopping: {failures} sessions in a row produced no log entry")

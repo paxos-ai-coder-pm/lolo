@@ -321,7 +321,7 @@ class Handler(BaseHTTPRequestHandler):
             start_runner(pid, d, int(b.get("iterations") or 3), b.get("model") or None,
                          bool(b.get("skip_permissions")))
             return self.send(201, {"id": pid})
-        m = re.fullmatch(r"/api/projects/([^/]+)/(start|stop|program|app/start|app/stop|folder)", path)
+        m = re.fullmatch(r"/api/projects/([^/]+)/(start|stop|program|app/start|app/stop|folder|feedback)", path)
         d = project_dir(m.group(1)) if m else None
         if not d:
             return self.send(404, {"error": "not found"})
@@ -333,6 +333,19 @@ class Handler(BaseHTTPRequestHandler):
         if action == "stop":
             stop_runner(pid, d)
             return self.send(200, {"ok": True})
+        if action == "feedback":   # the user talking to LoLo; the runner hands it to the next session
+            text = (b.get("text") or "").strip()
+            if len(text) < 3:
+                return self.send(400, {"error": "Write a few words so LoLo knows what to change."})
+            text = text[:4000]
+            stamp = time.strftime("%Y-%m-%dT%H:%M:%S%z")
+            with open(d / "user_feedback.jsonl", "a", encoding="utf-8") as f:
+                f.write(json.dumps({"t": stamp, "text": text}, ensure_ascii=False) + "\n")
+            with open(d / "activity.jsonl", "a", encoding="utf-8") as f:
+                f.write(json.dumps({"t": stamp, "session": None, "kind": "user", "text": text}, ensure_ascii=False) + "\n")
+            busy = status_of(pid, d)[0] in ("running", "waiting")
+            started = False if busy else start_runner(pid, d, int(b.get("iterations") or 3), b.get("model") or None)
+            return self.send(200, {"queued": busy, "started": started})
         if action == "app/start":
             url, err = start_app(pid, d)
             return self.send(200, {"url": url}) if url else self.send(409, {"error": err})

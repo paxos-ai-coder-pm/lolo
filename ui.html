@@ -120,6 +120,11 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .speech .who span:last-child { color: var(--muted); font-weight: 700; }
 .speech .line { font-size: 16px; line-height: 1.45; min-height: 2.9em; max-height: 2.9em; overflow: hidden; }
 
+.talk { display: flex; gap: 8px; align-items: flex-end; margin-top: 10px; }
+.talk textarea { flex: 1; resize: none; min-height: 38px; max-height: 120px; font-size: 14px; line-height: 1.4; }
+.talkmsg { font-size: 12.5px; color: var(--muted); min-height: 0; margin-top: 4px; }
+.talkmsg:empty { display: none; }
+.ev.user .k { color: var(--accent); } .ev.user .x { color: var(--ink); font-weight: 700; }
 .steps { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; padding: 10px; }
 .steps div { padding: 7px 4px; text-align: center; font: 700 12.5px var(--sans); color: var(--muted); border-radius: 10px; background: var(--panel-2); transition: background .3s, color .3s; }
 .steps div.done { color: var(--ink); background: rgba(229, 72, 77, .14); }
@@ -335,7 +340,13 @@ dialog.big iframe { width: 100%; height: calc(100% - 52px); border: 0; backgroun
         </div>
       </div>
       <div class="card monitor none" id="monitor"><div class="msg">LoLo's own dashboard appears here once the first version is built.</div></div>
-      <div class="card speech"><div class="who"><span>LoLo</span><span id="speechStage">asleep</span></div><div class="line" id="tty" aria-live="polite"></div></div>
+      <div class="card speech"><div class="who"><span>LoLo</span><span id="speechStage">asleep</span></div><div class="line" id="tty" aria-live="polite"></div>
+        <form class="talk" id="talk">
+          <textarea class="field" id="talkText" rows="1" aria-label="Tell LoLo what to change" placeholder="Tell LoLo what to change or what it got wrong"></textarea>
+          <button class="btn go" type="submit" id="talkSend">Send</button>
+        </form>
+        <div class="talkmsg" id="talkMsg"></div>
+      </div>
       <div class="card steps" id="steps"></div>
     </div>
 
@@ -1171,7 +1182,7 @@ function renderFeed(p) {
   const firstKey = acts.length ? acts[0].t + acts[0].text : null;
   if (firstKey !== feedSession || acts.length < feedCount) { feed.replaceChildren(); feedCount = 0; feedSession = firstKey; }
   const atBottom = feed.scrollHeight - feed.scrollTop - feed.clientHeight < 40;
-  const who = { text: "LoLo", tool: "tool", runner: "system", raw: "output" };
+  const who = { text: "LoLo", tool: "tool", runner: "system", raw: "output", user: "You" };
   const live = feedCount > 0;
   for (const a of acts.slice(feedCount)) {
     feed.append(el("div", { class: `ev ${a.kind}${live ? " new" : ""}` },
@@ -1248,6 +1259,24 @@ $("appOpen").addEventListener("click", async () => {
 });
 $("appStop").addEventListener("click", async () => { await api(`/api/projects/${encodeURIComponent(selected)}/app/stop`, {}); refresh(); });
 $("appFiles").addEventListener("click", () => api(`/api/projects/${encodeURIComponent(selected)}/folder`, {}).catch(e => alert(e.message)));
+// talking to LoLo: feedback goes to its next attempt, and wakes it up if it is resting
+const talkText = $("talkText");
+talkText.addEventListener("input", () => { talkText.style.height = "auto"; talkText.style.height = Math.min(120, talkText.scrollHeight) + "px"; });
+$("talk").addEventListener("submit", async e => {
+  e.preventDefault();
+  const text = talkText.value.trim();
+  if (!text || !selected) return;
+  $("talkSend").disabled = true; $("talkMsg").textContent = "";
+  try {
+    const r = await api(`/api/projects/${encodeURIComponent(selected)}/feedback`, { text, iterations: +$("dIters").value, model: $("dModel").value || null });
+    talkText.value = ""; talkText.style.height = "";
+    $("talkMsg").textContent = r.queued ? "Sent. LoLo will start on this at its next attempt." : "Sent. LoLo is waking up to work on it.";
+    notice = r.queued ? "Thanks, I'll work on that in my next attempt." : "Thanks for telling me. I'm on it.";
+    noticeUntil = Date.now() + 8000;
+  } catch (err) { $("talkMsg").textContent = err.message; }
+  $("talkSend").disabled = false;
+  refresh();
+});
 $("dStart").addEventListener("click", async () => {
   try { await api(`/api/projects/${encodeURIComponent(selected)}/start`, { iterations: +$("dIters").value, model: $("dModel").value || null }); } catch (e) { alert(e.message); }
   refresh();

@@ -17,7 +17,8 @@ This file is your operating system. **Never edit this file.** Everything you lea
 - **You are fully autonomous.** The user is not available to chat while you work. Wherever this file says to ask the user or get their approval, do this instead: make your recommended pick, write the question, the options, and your pick in `.builder/decisions.md` (marked `autonomous`), and keep going. Never stop to wait for an answer.
 - **You work in sessions.** Each session is a fresh start with no memory except the files on disk. Session 1 builds the first complete version. Every later session makes exactly one improvement attempt. Section 4 has the exact contract.
 - **The user watches a dashboard (called LoLo).** It shows your plain-language messages as you work, your experiment log, your score, and the `dashboard.html` page you build. Write every message and every log note for a non-technical reader.
-- **The user steers by editing this file** in the dashboard. Those edits are committed with the message `Edit program.md (human)`. At session start, check `git log --format="%h %ad %s" -- program.md` and read any new human edits as the user's latest instructions.
+- **The user talks to you with feedback** sent from the dashboard. New feedback is added to your session instructions. It is your top priority for that session.
+- **The user can also steer by editing this file** in the dashboard. Those edits are committed with the message `Edit program.md (human)`. At session start, check `git log --format="%h %ad %s" -- program.md` and read any new human edits as the user's latest instructions.
 
 ---
 
@@ -88,7 +89,7 @@ If the quality gate is not fully passing by the end of the session, still commit
 
 ### 4.2 Every later session: exactly one improvement attempt
 1. Session start (Section 6.1). Read `experiments.jsonl`, `.builder/state.json`, `retro.md`, and the notes of recent attempts. Do not repeat an attempt that already failed unless you have a new reason.
-2. Pick the single most valuable next step, in this order: a failing check or known bug; a gap in the quality gate; the next story from `scope.md` (v1 first, then later); anything that makes the app clearer or more reliable for its users.
+2. Pick the single most valuable next step, in this order: new user feedback; a failing check or known bug; a gap in the quality gate; the next story from `scope.md` (v1 first, then later); anything that makes the app clearer or more reliable for its users.
 3. Make the change (Section 7, Phase 5 rules: test first, small steps).
 4. Run `evaluate.py`.
 5. **Keep** if all tests pass and the result is better (4.4). Commit with a plain message, log `kept` with the hash.
@@ -117,7 +118,7 @@ Never edit or delete past lines.
 - Otherwise the score is the **quality score**: `100 × passing checks / total checks`, higher is better. The checks are every story check in `scope.md` plus every quality gate check (Section 12) that can be run automatically.
 - Write `metric.json`: `{"name": "...", "direction": "lower" | "higher", "unit": "...", "description": "one plain sentence"}`.
 - `evaluate.py` runs all automated checks from a clean start and prints one JSON object: `{"metric": number, "tests_passed": int, "tests_total": int, "duration_seconds": number}`. It must finish within **{{BUDGET}} seconds** (slower counts as a failed run).
-- **Better** means a higher (or lower, per `direction`) score with all tests passing. When the score is already at its best possible value (for example 100), a change also counts as better if all checks still pass and it delivers the next planned story or fixes a found bug, with new checks covering it.
+- **Better** means a higher (or lower, per `direction`) score with all tests passing. When the score is already at its best possible value (for example 100), a change also counts as better if all checks still pass and it addresses user feedback, delivers the next planned story, or fixes a found bug, with new checks covering it.
 - Never weaken, skip, or delete a check to raise the score. Checks only grow: new stories and new bugs add checks. Every check must test something a real user would notice. Never special-case the checks.
 - After session 1, never change how the score is computed. Write any needed change in `decisions.md` and leave it.
 
@@ -240,7 +241,7 @@ In autonomous mode, set each `approved` flag to true when you auto-approve, and 
 6. If any file is missing or corrupt: recreate it empty (never invent contents), and note it in `retro.md`.
 
 ### 6.2 Every piece of user input
-User input is the request in Section 0 and every human edit to this file.
+User input is the request in Section 0, every piece of feedback sent from the dashboard, and every human edit to this file.
 1. Classify it and append to `feedback.jsonl`.
 2. **Preference** ("I like dark screens") → `profile.md`.
 3. **Correction or complaint** → new or updated lesson.
