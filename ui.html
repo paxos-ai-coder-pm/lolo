@@ -298,9 +298,13 @@ dialog.big iframe { width: 100%; height: calc(100% - 52px); border: 0; backgroun
       <option>claude-sonnet-5-5</option>
       <option>claude-haiku-4-5-20251001</option>
     </select>
-    <span class="lbl runctl">Attempts</span><input class="field runctl num" type="number" id="dIters" value="10" min="1" style="width:66px;height:36px" aria-label="Attempts to run">
+    <span class="lbl runctl">Attempts</span><input class="field runctl num" type="number" id="dIters" value="3" min="1" style="width:66px;height:36px" aria-label="Attempts to run">
     <button class="btn go runctl" id="dStart">Resume</button>
     <button class="btn runctl" id="dStop">Pause</button>
+    <span class="runctl" style="width:1px;height:24px;background:var(--rule-2);margin:0 2px"></span>
+    <button class="btn runctl" id="appOpen" title="Start the app LoLo built and open it in a new tab">Open app</button>
+    <button class="btn ghost runctl" id="appStop" hidden title="Stop the app">Stop app</button>
+    <button class="btn ghost runctl" id="appFiles" title="Show the app's files on this computer">Show files</button>
     <button class="btn ghost" id="newBtn" title="New mission (N)">+ New mission</button>
   </header>
 
@@ -406,7 +410,7 @@ dialog.big iframe { width: 100%; height: calc(100% - 52px); border: 0; backgroun
       <textarea class="field" id="goal" placeholder="An app that plans my weekly meals from what's in my fridge"></textarea>
     </label>
     <div class="grid3">
-      <label>Attempts<input class="field num" type="number" id="iters" value="10" min="0" max="500"></label>
+      <label>Attempts<input class="field num" type="number" id="iters" value="3" min="0" max="500"></label>
       <label>Time limit per check (s)<input class="field num" type="number" id="budget" value="120" min="5"></label>
       <label>Model
         <select class="field" id="model">
@@ -978,13 +982,15 @@ function renderAgent(p) {
 
 // ---------------- readouts, sheet, lessons, monitor ----------------
 function renderReadouts(p) {
-  const exps = p.experiments_log, dir = direction(p), m = p.metric || {}, unit = m.unit ? ` ${m.unit}` : "";
+  const exps = p.experiments_log, dir = direction(p), m = p.metric || {};
+  const longUnit = (m.unit || "").length > 4;   // "ms" sits beside the number; "% of checks passing" goes underneath
+  const unit = m.unit && !longUnit ? ` ${m.unit}` : "";
   const kept = exps.filter(e => e.decision === "kept").length, disc = exps.filter(e => e.decision === "discarded").length;
   const imp = isNum(p.best) && isNum(p.baseline) ? (dir === "lower" ? p.baseline - p.best : p.best - p.baseline) : null;
   const impPct = isNum(imp) && p.baseline ? (imp / Math.abs(p.baseline)) * 100 : null;
   $("roBestCap").textContent = `Best ${m.name || "score"}`;
   tween($("roBest"), p.best, v => fmt(v) + (isNum(v) ? unit : ""));
-  $("roBestSub").textContent = `${dir} is better${m.description ? " · " + m.description : ""}`;
+  $("roBestSub").textContent = [longUnit ? m.unit : null, `${dir} is better`, m.description].filter(Boolean).join(" · ");
   $("roBestSub").title = m.description || "";
   tween($("roImp"), impPct, v => isNum(v) ? `${v > 0 ? "+" : ""}${v.toFixed(1)}%` : "–");
   $("roImp").className = "v " + (isNum(impPct) && impPct > 0 ? "up" : isNum(impPct) && impPct < 0 ? "down" : "");
@@ -1214,11 +1220,34 @@ function renderDetail(p) {
   $("dStart").disabled = active; $("dStop").disabled = !active;
   $("dStart").textContent = p.experiments ? "Resume" : "Start";
   checkNewResults(p);
+  renderAppButtons(p);
   renderAgent(p); renderReadouts(p); renderSheet(p); renderLearnt(p); renderMonitor(p); renderCharts(p); renderFeed(p); renderTable(p);
   if (!progDirty) $("progText").value = p.program_md;
   $("progSave").disabled = running; $("progText").readOnly = running;
   if (!progDirty) $("progMsg").textContent = running ? "Locked while LoLo is working. Pause first to edit." : "LoLo reads these instructions (program.md) at the start of every session.";
 }
+function renderAppButtons(p) {
+  const app = p.app || {}, ready = p.experiments > 0;
+  $("appOpen").disabled = !ready;
+  $("appOpen").title = ready ? "Start the app LoLo built and open it in a new tab" : "Available once LoLo has built a first version";
+  $("appOpen").textContent = app.running ? "Open app ↗" : "Open app";
+  $("appOpen").classList.toggle("go", ready && !app.running && p.status !== "running");
+  $("appStop").hidden = !app.running;
+  $("appFiles").title = p.folder ? `Show the files: ${p.folder}` : "Show the app's files";
+}
+$("appOpen").addEventListener("click", async () => {
+  const tab = window.open("about:blank", "_blank");   // open now so the browser doesn't block it
+  $("appOpen").disabled = true; $("appOpen").textContent = "Starting…";
+  try {
+    const { url } = await api(`/api/projects/${encodeURIComponent(selected)}/app/start`, {});
+    const full = new URL(url, location.href).href;
+    if (tab) tab.location = full; else window.open(full, "_blank");
+  } catch (e) { if (tab) tab.close(); alert(e.message); }
+  $("appOpen").disabled = false;
+  refresh();
+});
+$("appStop").addEventListener("click", async () => { await api(`/api/projects/${encodeURIComponent(selected)}/app/stop`, {}); refresh(); });
+$("appFiles").addEventListener("click", () => api(`/api/projects/${encodeURIComponent(selected)}/folder`, {}).catch(e => alert(e.message)));
 $("dStart").addEventListener("click", async () => {
   try { await api(`/api/projects/${encodeURIComponent(selected)}/start`, { iterations: +$("dIters").value, model: $("dModel").value || null }); } catch (e) { alert(e.message); }
   refresh();
@@ -1300,7 +1329,7 @@ async function launchFromLanding(goal) {
   landLoLo?.setStage("boot");
   const lines = $("llines"), prog = $("lprog");
   const steps = ["Got it!", "Reading your idea…", "Deciding how to measure success…", "Waking up LoLo…", "Here we go!"];
-  const create = api("/api/projects", { goal, iterations: 10, budget: 120 });   // starts the run right away
+  const create = api("/api/projects", { goal, iterations: 3, budget: 120 });   // starts the run right away
   let err = null;
   create.catch(e => { err = e; });
   for (let i = 0; i < steps.length && !err; i++) {

@@ -8,6 +8,7 @@ Standard library only.
 """
 
 import argparse
+import socket
 import json
 import mimetypes
 import os
@@ -28,6 +29,7 @@ PROJECTS = HERE / "projects"
 UI = HERE / "ui.html"
 
 procs = {}  # project id -> Popen of its run_loop.py
+apps = {}   # project id -> {"proc", "url", "out"} for the app the agent built
 procs_lock = threading.Lock()
 _alive_cache = {}  # pid -> (checked_at, alive) for runners started outside this server
 
@@ -131,8 +133,91 @@ def detail(pid, d):
         program_md=(d / "program.md").read_text(encoding="utf-8"),
         runner_log=log_tail,
         has_dashboard=(d / "dashboard.html").exists(),
+        app=app_status(pid),
+        folder=str(d),
     )
     return s
+
+
+def free_port():
+    with socket.socket() as s:
+        s.bind(("127.0.0.1", 0))
+        return s.getsockname()[1]
+
+
+def app_command(pid, d, port):
+    """How to start the app the agent built: run.json if it wrote one, else a careful guess."""
+    spec = read_json(d / "run.json", None)
+    if isinstance(spec, dict):
+        if spec.get("kind") == "static" and spec.get("open"):
+            return None, f"/p/{pid}/{spec['open'].lstrip('/')}"
+        cmd = [str(port) if c == "{port}" else c for c in spec.get("command") or []]
+        if cmd:
+            if cmd[0] in ("python", "python3", "py"):
+                cmd[0] = sys.executable
+            return cmd, None
+    if (d / "app.py").exists():
+        src = (d / "app.py").read_text(encoding="utf-8", errors="replace")
+        cmd = [sys.executable, "app.py"]
+        if "--port" in src:
+            cmd += ["--port", str(port)]
+        if "--no-browser" in src:
+            cmd += ["--no-browser"]
+        return cmd, None
+    if (d / "index.html").exists():
+        return None, f"/p/{pid}/index.html"
+    return None, None
+
+
+def app_status(pid):
+    a = apps.get(pid)
+    if a and a["proc"] is not None and a["proc"].poll() is not None:
+        apps.pop(pid, None)
+        return {"running": False}
+    return {"running": bool(a), "url": a["url"] if a else None}
+
+
+def start_app(pid, d):
+    st = app_status(pid)
+    if st["running"]:
+        return st["url"], None
+    port = free_port()
+    cmd, url = app_command(pid, d, port)
+    if url:   # a static page: nothing to start
+        return url, None
+    if not cmd:
+        return None, "LoLo has not built something that can be started yet."
+    kw = ({"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP} if os.name == "nt" else {"start_new_session": True})
+    proc = subprocess.Popen(cmd, cwd=d, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL,
+                            text=True, encoding="utf-8", errors="replace", env={**os.environ, "PORT": str(port)}, **kw)
+    entry = {"proc": proc, "url": None, "out": []}
+    found = threading.Event()
+
+    def watch():   # the app prints its address when it is ready
+        for line in proc.stdout:
+            entry["out"] = (entry["out"] + [line.rstrip()])[-30:]
+            m = re.search(r"https?://(?:127\.0\.0\.1|localhost):\d+[^\s'\"]*", line)
+            if m and not entry["url"]:
+                entry["url"] = m.group(0)
+                found.set()
+        found.set()
+
+    threading.Thread(target=watch, daemon=True).start()
+    found.wait(20)
+    if not entry["url"]:
+        if proc.poll() is None:
+            entry["url"] = f"http://127.0.0.1:{port}/"   # running but quiet: assume the port it was given
+        else:
+            tail = " ".join(entry["out"][-3:]) or "it closed straight away"
+            return None, f"The app did not start: {tail}"
+    apps[pid] = entry
+    return entry["url"], None
+
+
+def stop_app(pid):
+    a = apps.pop(pid, None)
+    if a and a["proc"] is not None and a["proc"].poll() is None:
+        kill_tree(a["proc"].pid)
 
 
 def start_runner(pid, d, iterations, model=None, skip_permissions=False):
@@ -233,20 +318,32 @@ class Handler(BaseHTTPRequestHandler):
             pid = new_project_id(goal, b.get("name"))
             d = PROJECTS / pid
             create_project(d, goal, int(b.get("budget") or 120))
-            start_runner(pid, d, int(b.get("iterations") or 10), b.get("model") or None,
+            start_runner(pid, d, int(b.get("iterations") or 3), b.get("model") or None,
                          bool(b.get("skip_permissions")))
             return self.send(201, {"id": pid})
-        m = re.fullmatch(r"/api/projects/([^/]+)/(start|stop|program)", path)
+        m = re.fullmatch(r"/api/projects/([^/]+)/(start|stop|program|app/start|app/stop|folder)", path)
         d = project_dir(m.group(1)) if m else None
         if not d:
             return self.send(404, {"error": "not found"})
         pid, action = m.groups()
         if action == "start":
-            ok = start_runner(pid, d, int(b.get("iterations") or 10), b.get("model") or None,
+            ok = start_runner(pid, d, int(b.get("iterations") or 3), b.get("model") or None,
                               bool(b.get("skip_permissions")))
             return self.send(200 if ok else 409, {"ok": ok})
         if action == "stop":
             stop_runner(pid, d)
+            return self.send(200, {"ok": True})
+        if action == "app/start":
+            url, err = start_app(pid, d)
+            return self.send(200, {"url": url}) if url else self.send(409, {"error": err})
+        if action == "app/stop":
+            stop_app(pid)
+            return self.send(200, {"ok": True})
+        if action == "folder":   # show the project's files in the file manager on this computer
+            if os.name == "nt":
+                os.startfile(d)
+            else:
+                subprocess.Popen(["open" if sys.platform == "darwin" else "xdg-open", str(d)])
             return self.send(200, {"ok": True})
         if action == "program":  # human edits to program.md, committed so reverts keep them
             if status_of(pid, d)[0] == "running":

@@ -79,7 +79,7 @@ The dashboard and the runner depend on these files. Follow this exactly.
 
 ### 4.1 Session 1 (when `experiments.jsonl` is missing or empty)
 Run Phases 1 to 7 of Section 7 for a small, excellent v1: understand, research, scope, design, build, quality gate, deliver. Then:
-1. Write `metric.json` and `evaluate.py` (4.4), and `dashboard.html` (4.5).
+1. Write `metric.json` and `evaluate.py` (4.4), `dashboard.html` (4.5), and `run.json` (4.6).
 2. Run `evaluate.py`. Commit everything.
 3. Append entry `id: 1` to `experiments.jsonl` with `decision: "kept"` and the commit hash.
 4. Write the session update (Section 3). Stop.
@@ -124,7 +124,13 @@ Never edit or delete past lines.
 ### 4.5 `dashboard.html`
 One self-contained page that reads `experiments.jsonl` (served over HTTP from the project folder) and shows, in plain words: the current best score and where it started, how many attempts were kept and dropped, a chart of the score over attempts with the best-so-far line, a chart of checks passing, and a sortable list of attempts with their notes. It refreshes itself every few seconds. Build it in session 1; after that, change it only to fix a bug.
 
-### 4.6 Your tools here
+### 4.6 `run.json`: how the user opens your app
+The user opens the app with an "Open app" button in the dashboard. Write `run.json` in session 1 and keep it working:
+- A web app: `{"kind": "web", "command": ["python", "app.py", "--port", "{port}", "--no-browser"]}`. The dashboard runs the command in this folder, replaces `{port}` with a free port, and opens the first `http://127.0.0.1:<port>` address the app prints. So the app must accept the port, print its address when it is ready, and not open a browser itself when told not to.
+- A single page with no server: `{"kind": "static", "open": "index.html"}`.
+Add a check to `evaluate.py` that starts the app exactly as `run.json` says and confirms the page loads.
+
+### 4.7 Your tools here
 You can read and write files, and run `python`, `git`, and a few read-only shell commands. You have no browser and no package installer you can rely on. Prefer the Python standard library. Test web apps by starting the server with Python and checking it with Python's `urllib` and `html.parser`. Never claim a check you could not actually run (see Section 12).
 
 ---

@@ -21,7 +21,9 @@ charts, every experiment, and an editor for that project's `program.md`.
 | `app.py` + `ui.html` | the web UI (standard library only, no build step) |
 | `projects/<name>/` | everything the agent wrote, plus `experiments.jsonl` and run state |
 
-You can run a project without the UI too: `python run_loop.py --project projects/compressor -n 10`.
+When a mission has a first version, **Open app** in the top bar starts the app LoLo built and opens it in a new tab; **Show files** opens its folder.
+
+You can run a project without the UI too: `python run_loop.py --project projects/<name> -n 3`.
 
 What the runner enforces regardless of what the agent does:
 - **Append-only log.** If past entries are edited, the runner restores them. If a session adds anything other than one valid entry, the runner warns.

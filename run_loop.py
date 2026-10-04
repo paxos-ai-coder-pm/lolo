@@ -335,7 +335,7 @@ def main():
     p.add_argument("--project", required=True, help="project directory")
     p.add_argument("--goal", help="create the project with this goal if it has no program.md")
     p.add_argument("--budget", type=int, default=120, help="evaluation time budget for new projects (s)")
-    p.add_argument("-n", "--iterations", type=int, default=10, help="Phase 2 experiments to run")
+    p.add_argument("-n", "--iterations", type=int, default=3, help="improvement attempts to run after the first version")
     p.add_argument("--model", help="model passed to claude --model")
     p.add_argument("--session-timeout", type=int, default=1800, help="seconds per agent session")
     p.add_argument("--max-failures", type=int, default=3, help="stop after this many sessions in a row log nothing")
