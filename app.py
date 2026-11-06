@@ -376,7 +376,7 @@ def main():
     PROJECTS.mkdir(exist_ok=True)
     server = ThreadingHTTPServer(("127.0.0.1", args.port), Handler)
     url = f"http://127.0.0.1:{args.port}"
-    print(f"loop agent UI: {url}  (Ctrl+C to quit; running loops keep going)")
+    print(f"LoLo: {url}  (Ctrl+C to quit; running loops keep going)")
     if not args.no_browser:
         threading.Timer(0.5, webbrowser.open, [url]).start()
     try:

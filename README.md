@@ -1,4 +1,4 @@
-# loop_agent
+# LoLo
 
 An autonomous engineering loop. You describe what to build. An agent builds a working
 baseline, then improves it one experiment at a time, keeping only changes that improve the
